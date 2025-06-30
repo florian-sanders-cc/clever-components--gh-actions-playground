@@ -8,27 +8,9 @@ on:
   pull_request:
     types: [synchronize, opened, reopened, closed]
 
-# on:
-#   workflow_call:
-#     inputs:
-#       matrix:
-#         required: true
-#         type: string
-#       branch:
-#         required: true
-#         type: string
-#       pr_number:
-#         required: true
-#         type: string
-#       base_sha:
-#         required: true
-#         type: string
-#       event_type:
-#         required: true
-#         type: string
-
 jobs:
   split-into-shards:
+    if: github.event.action != 'closed'
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
@@ -48,7 +30,6 @@ jobs:
           echo "matrix=$(node ./tasks/get-number-of-visual-batches.js)" >> $GITHUB_OUTPUT
 
   baseline-update:
-    if: github.event.action != 'closed'
     name: Baseline Update (sharded)
     needs: [split-into-shards]
     runs-on: ubuntu-latest
@@ -82,13 +63,13 @@ jobs:
 
       - name: 'Set LAST_BASELINE_UPDATE output'
         id: set_last_baseline_update
-        run: echo "last_baseline_update=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+        run: |
+          echo "last_baseline_update=$(TZ=Europe/Paris date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
 
     outputs:
       last_baseline_update: ${{ steps.set_last_baseline_update.outputs.last_baseline_update }}
 
   run-visual-regression-tests:
-    if: github.event.action != 'closed'
     name: Run Visual Regression Tests (Current changes)
     needs: [split-into-shards, baseline-update]
     runs-on: ubuntu-latest
@@ -119,6 +100,10 @@ jobs:
           GITHUB_HEAD_REF: ${{ github.event.pull_request.head.ref }}
         continue-on-error: true
 
+      - name: '[Prepare] Get report update date'
+        id: set-last-changes-update
+        run: echo "last_changes_update=$(TZ=Europe/Paris date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+
       - name: Upload report to GitHub Actions Artifacts
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -126,6 +111,9 @@ jobs:
           name: visual-regression-results-${{ matrix.batch }}.json
           path: test-reports/visual-regression-results.json
           retention-days: 1
+
+    outputs:
+      last_changes_update: ${{ steps.set-last-changes-update.outputs.last_changes_update }}
 
   generate-final-report:
     if: github.event.action != 'closed'
@@ -156,7 +144,9 @@ jobs:
         env:
           GITHUB_HEAD_REF: ${{ github.head_ref }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           LAST_BASELINE_UPDATE: ${{ needs.baseline-update.outputs.last_baseline_update }}
+          LAST_CHANGES_UPDATE: ${{ needs.run-visual-regression-tests.outputs.last_changes_update }}
           WORKFLOW_ID: ${{ github.run_id }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
 
@@ -177,10 +167,6 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
           echo nb_of_impacted_components=$(jq '.impactedComponents | length' test-reports/visual-regression-results-merged.json) >> $GITHUB_OUTPUT
 
-      - name: '[Prepare] Get report update date'
-        id: get-report-update-date
-        run: echo "report_update_date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
-
       - name: 'Create or edit PR comment'
         run: node .github/scripts/create-or-edit-comment.js
         env:
@@ -197,8 +183,8 @@ jobs:
               - Commit: ${{ github.event.pull_request.base.sha }}
               - Last update: ${{ needs.baseline-update.outputs.last_baseline_update }}
             - Changes info:
-              - Commit: ${{ github.sha }}
-              - Last update: ${{ steps.get-report-update-date.outputs.report_update_date }}
+              - Commit: ${{ github.event.pull_request.head.sha }}
+              - Last update: ${{ needs.run-visual-regression-tests.outputs.last_changes_update }}
             - Workflow run: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
             <details>

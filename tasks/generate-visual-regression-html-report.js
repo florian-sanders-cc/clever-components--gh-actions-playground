@@ -6,7 +6,7 @@ import { globSync } from 'tinyglobby';
 import '../src/components/cc-badge/cc-badge.js';
 import '../src/components/cc-visual-changes-menu/cc-visual-changes-menu.js';
 import '../src/components/cc-visual-changes-report-entry/cc-visual-changes-report-entry.js';
-import { getCurrentBranch, getCurrentCommit } from './git-utils.js';
+import { getCurrentBranch } from './git-utils.js';
 
 const CURRENT_BRANCH = getCurrentBranch();
 
@@ -37,8 +37,8 @@ const finalJsonReport = {
     lastUpdated: process.env.LAST_BASELINE_UPDATE,
   },
   changesMetadata: {
-    commitReference: getCurrentCommit(),
-    lastUpdated: new Date().toISOString(),
+    commitReference: process.env.HEAD_SHA,
+    lastUpdated: process.env.LAST_CHANGES_UPDATE,
   },
   workflowId: process.env.WORKFLOW_ID,
   prNumber: process.env.PR_NUMBER,
