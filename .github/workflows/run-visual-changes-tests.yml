@@ -1,44 +1,68 @@
 name: Run visual changes Tests
 
 concurrency:
-  group: visual-changes-${{ inputs.pr_number || inputs.branch }}
+  group: visual-changes-${{ github.event.pull_request.number || github.event.pull_request.head.ref }}
   cancel-in-progress: true
 
 on:
-  workflow_call:
-    inputs:
-      matrix:
-        required: true
-        type: string
-      branch:
-        required: true
-        type: string
-      pr_number:
-        required: true
-        type: string
-      base_sha:
-        required: true
-        type: string
-      event_type:
-        required: true
-        type: string
+  pull_request:
+    types: [synchronize, opened, reopened, closed]
+
+# on:
+#   workflow_call:
+#     inputs:
+#       matrix:
+#         required: true
+#         type: string
+#       branch:
+#         required: true
+#         type: string
+#       pr_number:
+#         required: true
+#         type: string
+#       base_sha:
+#         required: true
+#         type: string
+#       event_type:
+#         required: true
+#         type: string
 
 jobs:
+  split-into-shards:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: '[Prepare] Checkout'
+        uses: actions/checkout@v4
+
+      - name: '[Prepare] Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: 'package.json'
+          cache: 'npm'
+      - run: npm ci
+
+      - id: set-matrix
+        run: |
+          echo "matrix=$(node ./tasks/get-number-of-visual-batches.js)" >> $GITHUB_OUTPUT
+
   baseline-update:
-    if: inputs.event_type != 'closed'
+    if: github.event.action != 'closed'
     name: Baseline Update (sharded)
+    needs: [split-into-shards]
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.53.0-noble
       options: --user 1001
     strategy:
       matrix:
-        batch: ${{ fromJson(inputs.matrix) }}
+        batch: ${{ fromJson(needs.split-into-shards.outputs.matrix) }}
     steps:
       - name: '[Prepare] Checkout base commit'
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.base_sha }}
+          ref: ${{ github.event.pull_request.base.sha }}
 
       - name: '[Prepare] Setup Node.js'
         uses: actions/setup-node@v4
@@ -54,7 +78,7 @@ jobs:
         env:
           VISUAL_REGRESSIONS_CELLAR_KEY_ID: ${{ secrets.VISUAL_REGRESSIONS_CELLAR_KEY_ID }}
           VISUAL_REGRESSIONS_CELLAR_SECRET_KEY: ${{ secrets.VISUAL_REGRESSIONS_CELLAR_SECRET_KEY }}
-          GITHUB_HEAD_REF: ${{ inputs.branch }}
+          GITHUB_HEAD_REF: ${{ github.event.pull_request.head.ref }}
 
       - name: 'Set LAST_BASELINE_UPDATE output'
         id: set_last_baseline_update
@@ -64,21 +88,21 @@ jobs:
       last_baseline_update: ${{ steps.set_last_baseline_update.outputs.last_baseline_update }}
 
   run-visual-regression-tests:
-    if: inputs.event_type != 'closed'
+    if: github.event.action != 'closed'
     name: Run Visual Regression Tests (Current changes)
-    needs: [baseline-update]
+    needs: [split-into-shards, baseline-update]
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.53.0-noble
       options: --user 1001
     strategy:
       matrix:
-        batch: ${{ fromJson(inputs.matrix) }}
+        batch: ${{ fromJson(needs.split-into-shards.outputs.matrix) }}
     steps:
       - name: '[Prepare] Checkout latest commit'
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - name: '[Prepare] Setup Node.js'
         uses: actions/setup-node@v4
@@ -92,7 +116,7 @@ jobs:
         env:
           VISUAL_REGRESSIONS_CELLAR_KEY_ID: ${{ secrets.VISUAL_REGRESSIONS_CELLAR_KEY_ID }}
           VISUAL_REGRESSIONS_CELLAR_SECRET_KEY: ${{ secrets.VISUAL_REGRESSIONS_CELLAR_SECRET_KEY }}
-          GITHUB_HEAD_REF: ${{ inputs.branch }}
+          GITHUB_HEAD_REF: ${{ github.event.pull_request.head.ref }}
         continue-on-error: true
 
       - name: Upload report to GitHub Actions Artifacts
@@ -104,7 +128,7 @@ jobs:
           retention-days: 1
 
   generate-final-report:
-    if: inputs.event_type != 'closed'
+    if: github.event.action != 'closed'
     name: Generate final report
     needs: [baseline-update, run-visual-regression-tests]
     runs-on: ubuntu-latest
@@ -112,7 +136,7 @@ jobs:
       - name: '[Prepare] Checkout latest commit'
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - name: '[Prepare] Setup Node.js'
         uses: actions/setup-node@v4
@@ -131,10 +155,10 @@ jobs:
         run: node ./tasks/generate-visual-regression-html-report.js
         env:
           GITHUB_HEAD_REF: ${{ github.head_ref }}
-          BASE_SHA: ${{ inputs.base_sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
           LAST_BASELINE_UPDATE: ${{ needs.baseline-update.outputs.last_baseline_update }}
           WORKFLOW_ID: ${{ github.run_id }}
-          PR_NUMBER: ${{ inputs.pr_number }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
 
       - name: 'Upload test report'
         id: 'upload-test-report'
@@ -160,17 +184,17 @@ jobs:
       - name: 'Create or edit PR comment'
         run: node .github/scripts/create-or-edit-comment.js
         env:
-          PR_NUMBER: ${{ inputs.pr_number }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MARKER: 'Visual Changes Report'
           MESSAGE: |
-            ## :monocle_face: Visual Changes Report for PR #${{ inputs.pr_number }}
+            ## :monocle_face: Visual Changes Report for PR #${{ github.event.pull_request.number }}
 
             The latest visual regression test report is available. Please review the results.
 
             - [View HTML Report](${{ steps.upload-test-report.outputs.report_url }})
             - Baseline info:
-              - Commit: ${{ inputs.base_sha }}
+              - Commit: ${{ github.event.pull_request.base.sha }}
               - Last update: ${{ needs.baseline-update.outputs.last_baseline_update }}
             - Changes info:
               - Commit: ${{ github.sha }}
@@ -187,14 +211,14 @@ jobs:
             _This comment was generated automatically by the Visual Changes workflow._
 
   clean-up:
-    if: inputs.event_type == 'closed'
+    if: github.event.action == 'closed'
     name: 'Clean up visual changes report data'
     runs-on: ubuntu-latest
     steps:
       - name: '[Prepare] Checkout'
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - name: '[Prepare] Setup Node.js'
         uses: actions/setup-node@v4
@@ -213,7 +237,7 @@ jobs:
       - name: '[Run] Create clean up comment'
         run: node .github/scripts/create-or-edit-comment.js
         env:
-          PR_NUMBER: ${{ inputs.pr_number }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MESSAGE: |
             ## :broom: Visual Changes Report deleted
