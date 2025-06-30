@@ -164,6 +164,7 @@ export class CcBlock extends LitElement {
           display: block;
           overflow: hidden;
           position: relative;
+          padding: 1em;
         }
 
         .container {
