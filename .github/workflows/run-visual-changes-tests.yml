@@ -98,7 +98,7 @@ jobs:
       last_baseline_update: ${{ steps.set_last_baseline_update.outputs.last_baseline_update }}
 
   run-visual-regression-tests:
-    if: github.event.action.type != 'closed' && !contains(github.event.pull_request.labels.*.name, 'skip-visual-changes-tests') && always()
+    if: github.event.action.type != 'closed' && !contains(github.event.pull_request.labels.*.name, 'skip-visual-changes-tests') && !cancelled()
     name: Run Visual Regression Tests (Current changes)
     needs: [split-into-shards, check-for-last-baseline-update, baseline-update]
     runs-on: ubuntu-latest
@@ -145,7 +145,7 @@ jobs:
       last_changes_update: ${{ steps.set-last-changes-update.outputs.last_changes_update }}
 
   generate-final-report:
-    if: github.event.action != 'closed' && !contains(github.event.pull_request.labels.*.name, 'skip-visual-changes-tests') && always()
+    if: github.event.action != 'closed' && !contains(github.event.pull_request.labels.*.name, 'skip-visual-changes-tests') && !cancelled()
     name: Generate final report
     needs: [check-for-last-baseline-update, baseline-update, run-visual-regression-tests]
     runs-on: ubuntu-latest
@@ -250,7 +250,7 @@ jobs:
           VISUAL_REGRESSIONS_CELLAR_SECRET_KEY: ${{ secrets.VISUAL_REGRESSIONS_CELLAR_SECRET_KEY }}
           GITHUB_HEAD_REF: ${{ github.head_ref }}
 
-      - name: '[Run] Clean up comment'
+      - name: '[Run] Create clean up comment'
         if: (!contains(github.event.pull_request.labels.*.name, 'skip-visual-changes-tests'))
         run: node .github/scripts/create-or-edit-comment.js
         env:
@@ -263,7 +263,7 @@ jobs:
 
             _This comment was generated automatically by the Visual Changes workflow._
 
-      - name: '[Run] Clean up comment'
+      - name: '[Run] Delete report comment'
         if: (contains(github.event.pull_request.labels.*.name, 'skip-visual-changes-tests'))
         run: node .github/scripts/delete-comment.js
         env:
