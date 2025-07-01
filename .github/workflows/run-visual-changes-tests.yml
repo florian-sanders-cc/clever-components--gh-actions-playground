@@ -251,7 +251,7 @@ jobs:
           GITHUB_HEAD_REF: ${{ github.head_ref }}
 
       - name: '[Run] Clean up comment'
-        if: steps.delete-report-and-assets.outputs.has_deleted_report == 'true'
+        if: (!contains(github.event.pull_request.labels.*.name, 'skip-visual-changes-tests'))
         run: node .github/scripts/create-or-edit-comment.js
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -262,3 +262,11 @@ jobs:
             The report and its associated data have been deleted following the closing of this PR.
 
             _This comment was generated automatically by the Visual Changes workflow._
+
+      - name: '[Run] Clean up comment'
+        if: (contains(github.event.pull_request.labels.*.name, 'skip-visual-changes-tests'))
+        run: node .github/scripts/delete-comment.js
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MARKER: 'Visual Changes Report'
