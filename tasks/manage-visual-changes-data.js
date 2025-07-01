@@ -39,9 +39,17 @@ async function uploadReport() {
 
 async function deleteReportAndAssociatedData() {
   try {
+    const keys = await cellar.listKeys({ prefix: CURRENT_BRANCH + '/' });
     await cellar.deleteManyObjects({ prefix: CURRENT_BRANCH + '/' });
+
+    if (process.env.GITHUB_OUTPUT != null) {
+      appendFileSync(process.env.GITHUB_OUTPUT, `has_deleted_report=${keys.length > 0}\n`);
+    }
   } catch (error) {
     console.error(error);
+    if (process.env.GITHUB_OUTPUT != null) {
+      appendFileSync(process.env.GITHUB_OUTPUT, `has_deleted_report=false\n`);
+    }
     process.exit(1);
   }
 }
@@ -68,6 +76,9 @@ async function checkForLastBaselineUpdate() {
     }
     console.log('Baseline should be updated: ' + shouldUpdateBaseline);
   } catch (error) {
+    if (error.message === 'NoSuchKey') {
+      appendFileSync(process.env.GITHUB_OUTPUT, `should_update_baseline=true\n`);
+    }
     console.error(error);
   }
 }
