@@ -1,6 +1,6 @@
 import { appendFileSync } from 'node:fs';
 import { CELLAR_HOST, CellarClient } from './cellar-client.js';
-import { getCurrentBranch } from './git-utils.js';
+import { getBranchBaseCommit, getCurrentBranch } from './git-utils.js';
 
 const CURRENT_BRANCH = getCurrentBranch();
 const BUCKET_NAME = 'clever-test-flo-visual-regressions';
@@ -19,6 +19,10 @@ if (process.argv.includes('upload')) {
   await uploadReport();
 }
 
+if (process.argv.includes('check-for-baseline-update')) {
+  await checkForLastBaselineUpdate();
+}
+
 async function uploadReport() {
   await cellar.sync({ localDir: 'test-reports/', remoteDir: REMOTE_DIR, deleteRemoved: true }).catch((error) => {
     console.error(error);
@@ -35,11 +39,35 @@ async function uploadReport() {
 
 async function deleteReportAndAssociatedData() {
   try {
-    console.log('-------- CURRENT BRANCH: ', CURRENT_BRANCH);
     await cellar.deleteManyObjects({ prefix: CURRENT_BRANCH + '/' });
-    console.log(`Report deleted for the current branch ${CURRENT_BRANCH}`);
   } catch (error) {
     console.error(error);
     process.exit(1);
+  }
+}
+
+async function checkForLastBaselineUpdate() {
+  try {
+    console.log('Fetching last report');
+    const { baselineMetadata } = await cellar.getObject({
+      key: `${CURRENT_BRANCH}/test-reports/visual-regression-results-merged.json`,
+    });
+    const baseCommit = process.env.BASE_SHA ?? getBranchBaseCommit();
+
+    console.log('Current baseline commit: ' + baseCommit);
+    console.log('Last report baseline commit: ' + baselineMetadata.commitReference);
+    console.log('Last report baseline update: ' + baselineMetadata.lastUpdated);
+
+    const shouldUpdateBaseline = baseCommit !== baselineMetadata.commitReference;
+
+    if (process.env.GITHUB_OUTPUT != null) {
+      appendFileSync(
+        process.env.GITHUB_OUTPUT,
+        `should_update_baseline=${shouldUpdateBaseline}\nlast_baseline_update=${baselineMetadata.lastUpdated}\n`,
+      );
+    }
+    console.log('Baseline should be updated: ' + shouldUpdateBaseline);
+  } catch (error) {
+    console.error(error);
   }
 }

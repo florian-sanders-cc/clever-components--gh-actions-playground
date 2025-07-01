@@ -29,9 +29,35 @@ jobs:
         run: |
           echo "matrix=$(node ./tasks/get-number-of-visual-batches.js)" >> $GITHUB_OUTPUT
 
+  check-for-last-baseline-update:
+    name: Check for last baseline update
+    runs-on: ubuntu-latest
+    outputs:
+      should_update_baseline: ${{ steps.check-for-last-baseline-update.outputs.should_update_baseline }}
+      last_baseline_update: ${{ steps.check-for-last-baseline-update.outputs.last_baseline_update }}
+    steps:
+      - name: '[Prepare] Checkout'
+        uses: actions/checkout@v4
+
+      - name: '[Prepare] Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: 'package.json'
+          cache: 'npm'
+      - run: npm ci
+
+      - name: Check for last baseline update
+        id: check-for-last-baseline-update
+        run: node ./tasks/manage-visual-changes-data.js check-for-baseline-update
+        env:
+          VISUAL_REGRESSIONS_CELLAR_KEY_ID: ${{ secrets.VISUAL_REGRESSIONS_CELLAR_KEY_ID }}
+          VISUAL_REGRESSIONS_CELLAR_SECRET_KEY: ${{ secrets.VISUAL_REGRESSIONS_CELLAR_SECRET_KEY }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+
   baseline-update:
     name: Baseline Update (sharded)
-    needs: [split-into-shards]
+    if: needs.check-for-last-baseline-update.outputs.should_update_baseline == 'true'
+    needs: [split-into-shards, check-for-last-baseline-update]
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.53.0-noble
@@ -64,14 +90,15 @@ jobs:
       - name: 'Set LAST_BASELINE_UPDATE output'
         id: set_last_baseline_update
         run: |
-          echo "last_baseline_update=$(TZ=Europe/Paris date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          echo "last_baseline_update=$(TZ=Europe/Paris date +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
 
     outputs:
       last_baseline_update: ${{ steps.set_last_baseline_update.outputs.last_baseline_update }}
 
   run-visual-regression-tests:
     name: Run Visual Regression Tests (Current changes)
-    needs: [split-into-shards, baseline-update]
+    if: github.event.action.type != 'closed' && always()
+    needs: [split-into-shards, check-for-last-baseline-update, baseline-update]
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.53.0-noble
@@ -102,7 +129,7 @@ jobs:
 
       - name: '[Prepare] Get report update date'
         id: set-last-changes-update
-        run: echo "last_changes_update=$(TZ=Europe/Paris date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+        run: echo "last_changes_update=$(TZ=Europe/Paris date +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
 
       - name: Upload report to GitHub Actions Artifacts
         if: ${{ !cancelled() }}
@@ -116,9 +143,9 @@ jobs:
       last_changes_update: ${{ steps.set-last-changes-update.outputs.last_changes_update }}
 
   generate-final-report:
-    if: github.event.action != 'closed'
+    if: github.event.action != 'closed' && always()
     name: Generate final report
-    needs: [baseline-update, run-visual-regression-tests]
+    needs: [check-for-last-baseline-update, baseline-update, run-visual-regression-tests]
     runs-on: ubuntu-latest
     steps:
       - name: '[Prepare] Checkout latest commit'
@@ -145,7 +172,7 @@ jobs:
           GITHUB_HEAD_REF: ${{ github.head_ref }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          LAST_BASELINE_UPDATE: ${{ needs.baseline-update.outputs.last_baseline_update }}
+          LAST_BASELINE_UPDATE: ${{ needs.baseline-update.outputs.last_baseline_update || needs.check-for-last-baseline-update.outputs.last_baseline_update }}
           LAST_CHANGES_UPDATE: ${{ needs.run-visual-regression-tests.outputs.last_changes_update }}
           WORKFLOW_ID: ${{ github.run_id }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -181,7 +208,7 @@ jobs:
             - [View HTML Report](${{ steps.upload-test-report.outputs.report_url }})
             - Baseline info:
               - Commit: ${{ github.event.pull_request.base.sha }}
-              - Last update: ${{ needs.baseline-update.outputs.last_baseline_update }}
+              - Last update: ${{ needs.baseline-update.outputs.last_baseline_update || needs.check-for-last-baseline-update.outputs.last_baseline_update }}
             - Changes info:
               - Commit: ${{ github.event.pull_request.head.sha }}
               - Last update: ${{ needs.run-visual-regression-tests.outputs.last_changes_update }}
