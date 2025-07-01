@@ -207,7 +207,7 @@ jobs:
 
             The latest visual regression test report is available. Please review the results.
 
-            - [View HTML Report](${{ steps.upload-test-report.outputs.report_url }})
+            - <a href="${{ steps.upload-test-report.outputs.report_url }}" rel="noopener" target="_blank" title="View HTML Report - new window">View HTML Report</a>
             - Baseline info:
               - Commit: ${{ github.event.pull_request.base.sha }}
               - Last update: ${{ needs.baseline-update.outputs.last_baseline_update || needs.check-for-last-baseline-update.outputs.last_baseline_update }}
