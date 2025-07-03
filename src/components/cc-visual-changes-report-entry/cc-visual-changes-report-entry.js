@@ -14,7 +14,8 @@ import '../cc-img/cc-img.js';
 import '../cc-toggle/cc-toggle.js';
 
 /**
- * @typedef {import('./cc-visual-changes-report-entry.types.js').VisualChangesTestResult} VisualChangeTestResult
+ * @typedef {import('./cc-visual-changes-report-entry.types.js').VisualChangesTestResult} VisualChangesTestResult
+ * @typedef {import('./cc-visual-changes-report-entry.types.js').VisualChangesTestReport} VisualChangesTestReport
  * @typedef {import('./cc-visual-changes-report-entry.types.js').VisualChangesScreenshots} VisualChangesScreenshots
  * @typedef {import('../cc-toggle/cc-toggle.types.js').Choice} Choice
  */
@@ -57,7 +58,7 @@ export class CcVisualChangesReportEntry extends LitElement {
   constructor() {
     super();
 
-    /** @type {import('./cc-visual-changes-report-entry.types.js').VisualChangesTestResult|null} */
+    /** @type {VisualChangesTestResult|null} */
     this.testResult = null;
 
     /** @type {typeof CHOICES[number]['value']} */
@@ -92,7 +93,9 @@ export class CcVisualChangesReportEntry extends LitElement {
           ? html`
               <cc-img-diff-viewer
                 base-img-src="${screenshots.baselineScreenshotUrl}"
+                base-img-text="Baseline"
                 changed-img-src="${screenshots.changesScreenshotUrl}"
+                changed-img-text="Changes"
               ></cc-img-diff-viewer>
             `
           : ''}
@@ -127,6 +130,7 @@ export class CcVisualChangesReportEntry extends LitElement {
       css`
         :host {
           display: grid;
+          grid-template-rows: max-content 1fr;
           gap: 1em;
         }
 
@@ -142,10 +146,10 @@ export class CcVisualChangesReportEntry extends LitElement {
         }
 
         .main-heading {
-          font-size: 1.6em;
-          /* font-variant: small-caps; */
+          color: var(--cc-color-text-primary-strongest);
+          font-size: 1.2em;
           font-weight: bold;
-          color: var(--cc-color-text-primary-strong);
+          font-weight: bold;
           display: flex;
           flex-wrap: wrap;
           align-items: center;
@@ -182,8 +186,9 @@ export class CcVisualChangesReportEntry extends LitElement {
         img {
           display: block;
           max-width: 100%;
-          height: auto;
+          max-height: 30rem;
           width: 100%;
+          object-fit: contain;
         }
 
         .three-way-diff__side-by-side a {
@@ -191,12 +196,21 @@ export class CcVisualChangesReportEntry extends LitElement {
           min-width: min(16em, 100%);
           flex: 1 1 45%;
           box-sizing: border-box;
-          border: solid 1px var(--cc-color-border-neutral-weak);
+          overflow: hidden;
+          border: solid 1px var(--cc-color-border-neutral);
+          border-radius: var(--cc-border-radius-default);
         }
 
         .diff {
           display: block;
-          border: solid 1px var(--cc-color-border-neutral-weak);
+          overflow: hidden;
+          border: solid 1px var(--cc-color-border-neutral);
+          border-radius: var(--cc-border-radius-default);
+        }
+
+        cc-img-diff-viewer {
+          border: solid 1px var(--cc-color-border-neutral);
+          border-radius: var(--cc-border-radius-default);
         }
       `,
     ];

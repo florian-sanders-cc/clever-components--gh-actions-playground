@@ -12,6 +12,11 @@ const conf = {
   css: `
     :host {
       max-width: 100% !important;
+      height: 100vh;
+    }
+
+    cc-visual-changes-report-entry {
+      height: 100%;
     }
   `,
 };

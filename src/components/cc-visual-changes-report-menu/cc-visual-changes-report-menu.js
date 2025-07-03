@@ -16,6 +16,7 @@ import { LitElement, css, html } from 'lit';
 import { classMap } from 'lit/directives/class-map.js';
 import {
   iconRemixArrowDownSLine as iconArrowDown,
+  iconRemixArrowLeftSLine as iconArrowLeft,
   iconRemixArrowRightSLine as iconArrowRight,
 } from '../../assets/cc-remix.icons.js';
 import { camelCaseToHuman } from '../../lib/change-case.js';
@@ -25,23 +26,37 @@ import '../cc-icon/cc-icon.js';
 /**
  * @typedef {import('../cc-visual-changes-report-entry/cc-visual-changes-report-entry.types.js').VisualChangesTestResult} VisualChangesTestResult
  * @typedef {import('../../lib/events.types.js').EventWithTarget<HTMLAnchorElement>} HTMLAnchorEvent
+ * @typedef {import('lit').PropertyValues<CcVisualChangesReportMenu>} CcVisualChangesReportMenuPropertyValues
  */
 
-export class CcVisualChangesMenu extends LitElement {
+export class CcVisualChangesReportMenu extends LitElement {
   static get properties() {
     return {
+      activeTestResultId: { type: String, attribute: 'active-test-result-id' },
       testResults: { type: Array, attribute: 'test-results' },
+      _menuEntries: { type: Array, state: true },
       _openCategory: { type: Object, state: true },
+      _sortedTestResultsIds: { type: Array, state: true },
     };
   }
 
   constructor() {
     super();
 
+    /** @type {VisualChangesTestResult['id']} */
+    this.activeTestResultId = null;
+
     /** @type {VisualChangesTestResult[]} */
-    this.testResults = null;
+    this.testResults = [];
+
     /** @type {{ component: string, story: string }} */
     this._openCategory = { component: null, story: null };
+
+    /** @type {Array<any>}  */
+    this._menuEntries = [];
+
+    /** @type {Array<VisualChangesTestResult['id']>} */
+    this._sortedTestResultsIds = [];
   }
 
   /**
@@ -78,21 +93,30 @@ export class CcVisualChangesMenu extends LitElement {
     }
     // Flatten stories for each component
     components.forEach((c) => {
-      c.stories = c.storyList;
+      c.stories = c.storyList.sort((a, b) => {
+        if (a.storyName === 'defaultStory' && b.storyName !== 'defaultStory') {
+          return -1;
+        }
+        if (a.storyName !== 'defaultStory' && b.storyName === 'defaultStory') {
+          return 1;
+        }
+        return a.storyName.localeCompare(b.storyName);
+      });
       delete c.storyList;
     });
     return components;
   }
 
+  /** @param {string} componentTagName */
   _toggleComponent(componentTagName) {
     if (this._openCategory.component === componentTagName) {
       this._openCategory = { ...this._openCategory, component: null };
     } else {
-      console.log({ ...this._openCategory, component: componentTagName });
       this._openCategory = { ...this._openCategory, component: componentTagName };
     }
   }
 
+  /** @param {string} storyName */
   _toggleStory(storyName) {
     if (this._openCategory.story === storyName) {
       this._openCategory = { ...this._openCategory, story: null };
@@ -101,16 +125,60 @@ export class CcVisualChangesMenu extends LitElement {
     }
   }
 
+  /** @param {CcVisualChangesReportMenuPropertyValues} changedProperties */
+  willUpdate(changedProperties) {
+    if (changedProperties.has('activeTestResultId') || changedProperties.has('testResults')) {
+      const activeTestResult = this.testResults.find((testResult) => this.activeTestResultId === testResult.id);
+      if (activeTestResult != null) {
+        this._openCategory = { component: activeTestResult.componentTagName, story: activeTestResult.storyName };
+      }
+    }
+
+    if (changedProperties.has('testResults')) {
+      this._menuEntries = this._getMenuEntries(this.testResults || []);
+      this._sortedTestResultsIds = this._menuEntries.flatMap((menuEntry) =>
+        menuEntry.stories.flatMap((story) => story.viewports).flatMap(({ id }) => id),
+      );
+    }
+  }
+
+  /**
+   * Returns the previous and next test result IDs, wrapping around if needed.
+   */
+  _getPrevNextTestResultIds() {
+    const activeTestResultIndex = this._sortedTestResultsIds.indexOf(this.activeTestResultId);
+    const total = this._sortedTestResultsIds.length;
+    const previousTestResultIndex = (activeTestResultIndex - 1 + total) % total;
+    const nextTestResultIndex = (activeTestResultIndex + 1) % total;
+    return {
+      previousTestResultId: this._sortedTestResultsIds[previousTestResultIndex],
+      nextTestResultId: this._sortedTestResultsIds[nextTestResultIndex],
+    };
+  }
+
   render() {
-    const menuEntries = this._getMenuEntries(this.testResults || []);
-    console.log(this.testResults);
+    if (this.testResults.length === 0) {
+      return '';
+    }
+
+    const { previousTestResultId, nextTestResultId } = this._getPrevNextTestResultIds();
     return html`
-      <ul>
-        ${menuEntries.map(({ componentTagName, stories }) => {
+      <ul class="quick-nav">
+        <li>
+          <a href="/test-result/${previousTestResultId}">
+            <cc-icon .icon="${iconArrowLeft}"></cc-icon>
+            <span>Previous</span>
+          </a>
+        </li>
+        <li>
+          <a href="/test-result/${nextTestResultId}"><span>Next</span> <cc-icon .icon="${iconArrowRight}"></cc-icon></a>
+        </li>
+      </ul>
+      <ul class="component-tag-names">
+        ${this._menuEntries.map(({ componentTagName, stories }) => {
           const open = this._openCategory.component === componentTagName;
-          console.log({ componentTagName, stories });
           return html`
-            <li>
+            <li class="component-tag-name ">
               <button
                 class="toggle-btn"
                 @click="${() => this._toggleComponent(componentTagName)}"
@@ -120,11 +188,13 @@ export class CcVisualChangesMenu extends LitElement {
                 <cc-icon .icon="${iconArrowDown}"></cc-icon>
                 <span>${componentTagName}</span>
               </button>
-              <ul id="stories-${componentTagName}" class="story-level ${classMap({ hidden: !open })}">
+              <ul
+                id="stories-${componentTagName} "
+                class="story-level ${classMap({ hidden: !open, 'component-tag-name--active': open })}"
+              >
                 ${stories.map(({ storyName, viewports }) => {
                   const isStoryOpen = this._openCategory.story === storyName;
-                  console.log({ storyName });
-                  return html`<li>
+                  return html`<li class="story-name">
                     <button
                       class="toggle-btn"
                       @click="${() => this._toggleStory(storyName)}"
@@ -138,9 +208,14 @@ export class CcVisualChangesMenu extends LitElement {
                       ${viewports.map(
                         ({ viewportType, browserName, id }) => html`
                           <li class="viewport-browser">
-                            <a href="${id}"
-                              >${viewportType} - ${browserName} <cc-icon .icon="${iconArrowRight}"></cc-icon
-                            ></a>
+                            <a
+                              class="test-result-entry ${classMap({
+                                'test-result-entry--active': this.activeTestResultId === id,
+                              })}"
+                              href="/test-result/${id}"
+                            >
+                              ${viewportType} - ${browserName} <cc-icon .icon="${iconArrowRight}"></cc-icon>
+                            </a>
                           </li>
                         `,
                       )}
@@ -160,8 +235,6 @@ export class CcVisualChangesMenu extends LitElement {
       css`
         :host {
           display: block;
-          border-right: solid 1px var(--cc-color-border-neutral-weak);
-          height: 100%;
         }
 
         cc-icon {
@@ -175,11 +248,6 @@ export class CcVisualChangesMenu extends LitElement {
           margin: 0;
         }
 
-        ul {
-          display: block;
-          height: 100%;
-        }
-
         .toggle-btn {
           background: none;
           border: none;
@@ -190,7 +258,11 @@ export class CcVisualChangesMenu extends LitElement {
           align-items: center;
           gap: 0.5em;
           width: 100%;
-          padding: 0.5em 1em;
+          text-align: start;
+        }
+
+        .component-tag-name > .toggle-btn {
+          padding: 1em;
         }
 
         a:focus-visible,
@@ -212,31 +284,95 @@ export class CcVisualChangesMenu extends LitElement {
           transform: rotate(90deg);
         }
 
+        .component-tag-names {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5em;
+        }
+
+        .component-tag-name {
+          transition: background-color 0.3s;
+        }
+
+        .component-tag-name--active {
+          transition: background-color 0.3s;
+          background-color: var(--cc-color-bg-neutral-alt);
+        }
+
+        .story-name {
+          padding: 0.5em;
+        }
+
+        .story-name:not(:last-of-type) {
+          border-bottom: solid 1px var(--cc-color-border-neutral);
+        }
+
         .story-level {
-          margin-left: 1.5em;
+          padding: 0.5em 1em;
+          display: flex;
+          flex-direction: column;
+          gap: 0.5em;
         }
 
         .viewport-level {
-          margin-left: 3.5em;
+          padding: 0.5em 0;
         }
 
-        a {
-          display: block;
-          padding: 0.5em;
+        .test-result-entry {
+          padding: 0.5em 0.5em;
+          margin-left: 1.5em;
           text-transform: capitalize;
           display: flex;
           align-items: center;
+          justify-content: space-between;
           text-decoration: none;
           color: var(--cc-color-text-default);
         }
 
+        .test-result-entry:hover {
+          text-decoration: underline;
+        }
+
+        .test-result-entry--active {
+          color: var(--cc-color-text-inverted);
+          background-color: var(--cc-color-bg-primary);
+          border-radius: var(--cc-border-radius-small);
+        }
+
         .hidden {
-          visibility: hidden;
-          height: 0;
+          display: none;
+        }
+
+        .quick-nav {
+          display: flex;
+          padding: 1em;
+          gap: 1em;
+        }
+
+        .quick-nav li {
+          flex: 1 1 0;
+        }
+
+        .quick-nav a {
+          text-decoration: none;
+          display: flex;
+          justify-content: space-between;
+          gap: 0.5em;
+          align-items: center;
+          background-color: var(--cc-color-bg-primary);
+          color: var(--cc-color-text-inverted);
+          padding: 0.5em;
+          flex: 1 1 0;
+          border-radius: var(--cc-border-radius-default);
+        }
+
+        .quick-nav a:focus {
+          outline: var(--cc-focus-outline);
+          outline-offset: var(--cc-focus-outline-offset);
         }
       `,
     ];
   }
 }
 
-customElements.define('cc-visual-changes-menu', CcVisualChangesMenu);
+customElements.define('cc-visual-changes-report-menu', CcVisualChangesReportMenu);

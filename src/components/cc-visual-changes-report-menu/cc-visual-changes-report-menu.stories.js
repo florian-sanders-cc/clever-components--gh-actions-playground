@@ -1,23 +1,27 @@
 import { makeStory } from '../../stories/lib/make-story.js';
-import './cc-visual-changes-menu.js';
+import './cc-visual-changes-report-menu.js';
 
 export default {
   tags: ['autodocs'],
-  title: '🛠 Utility/<cc-visual-changes-menu>',
-  component: 'cc-visual-changes-menu',
+  title: '🛠 Utility/<cc-visual-changes-report-menu>',
+  component: 'cc-visual-changes-report-menu',
 };
 
 const conf = {
-  component: 'cc-visual-changes-menu',
+  component: 'cc-visual-changes-report-menu',
   css: `
     :host {
       max-width: 100% !important;
+    }
+
+    cc-visual-changes-report-menu {
+      max-width: 14em;
     }
   `,
 };
 
 /**
- * @typedef {import('./cc-visual-changes-menu.js').CcVisualChangesMenu} CcVisualChangesMenu
+ * @typedef {import('./cc-visual-changes-report-menu.js').CcVisualChangesReportMenu} CcVisualChangesMenu
  * @typedef {import('../cc-visual-changes-report-entry/cc-visual-changes-report-entry.types.js').VisualChangesTestResult} VisualChangesTestResult
  */
 
@@ -251,6 +255,16 @@ export const defaultStory = makeStory(conf, {
   items: [
     {
       testResults: baseResults,
+    },
+  ],
+});
+
+export const preselectedMenuEntry = makeStory(conf, {
+  /** @type {Array<Partial<CcVisualChangesMenu>>} */
+  items: [
+    {
+      testResults: baseResults,
+      activeTestResultId: baseResults[1].id,
     },
   ],
 });

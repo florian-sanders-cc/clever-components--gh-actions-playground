@@ -79,29 +79,43 @@ export class CcImgDiffViewer extends LitElement {
           display: grid;
           grid-template-areas: 'img';
           position: relative;
+          height: 100%;
+          min-height: 0;
+          max-width: max-content;
+          margin-inline: auto;
           align-items: center;
-          justify-content: stretch;
+          justify-content: center;
           border-radius: var(--cc-border-radius-default);
-          border: solid 1px var(--cc-color-border-neutral);
         }
 
         .base-img,
         .changed-img {
           grid-area: img;
           display: grid;
+          position: relative;
         }
 
         .heading {
           padding: 1em;
           font-style: italic;
+          font-size: 0.9em;
+          position: absolute;
+        }
+
+        .base-img .heading {
+          top: 0;
+          left: 2em;
         }
 
         .changed-img .heading {
-          justify-self: flex-end;
+          top: 0;
+          right: 2em;
         }
 
         img {
-          width: 100%;
+          width: auto;
+          max-height: 100%;
+          max-width: 100%;
           order: -1;
         }
 
@@ -130,7 +144,7 @@ export class CcImgDiffViewer extends LitElement {
           top: 0;
           height: 100%;
           width: 5px;
-          background-color: var(--cc-color-border-neutral-weak);
+          background-color: var(--cc-color-border-neutral);
           transform: translateX(-50%);
           box-sizing: border-box;
           border: solid 2px #fff;

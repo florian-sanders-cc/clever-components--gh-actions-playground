@@ -12,3 +12,19 @@ export interface VisualChangesScreenshots {
   diffScreenshotUrl: string;
   changesScreenshotUrl: string;
 }
+
+export interface VisualChangesTestReport {
+  baselineMetadata: {
+    commitReference: string;
+    lastUpdated: string;
+  };
+  changesMetadata: {
+    commitReference: string;
+    lastUpdated: string;
+  };
+  workflowId: string;
+  prNumber: string;
+  branch: string;
+  impactedComponents: string[];
+  results: VisualChangesTestResult[];
+}

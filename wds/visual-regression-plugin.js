@@ -10,9 +10,13 @@ const cellar = new CellarClient({
 
 export const visualRegressionPluginWithConfig = visualRegressionPlugin({
   diffOptions: {
-    alpha: 1,
-    aaColor: [0, 255, 255],
-    diffColor: [0, 255, 255],
+    threshold: 0.1, // matching threshold (0 to 1); smaller is more sensitive
+    includeAA: false, // whether to skip anti-aliasing detection
+    alpha: 0.3, // opacity of original image in diff output
+    aaColor: [255, 255, 0], // color of anti-aliased pixels in diff output
+    diffColor: [30, 30, 30], // color of different pixels in diff output
+    diffColorAlt: [255, 0, 0], // whether to detect dark on light differences between img1 and img2 and set an alternative color to differentiate between the two
+    diffMask: false, // draw the diff over a transparent background (a mask)
   },
   update: process.argv.includes('--update-visual-baseline'), // should we force to target some component or all? need to test what happens when you update baseline and it's already ok?
   getBaselineName({ browser, name: componentWithStoryName }) {
