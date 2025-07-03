@@ -365,8 +365,6 @@ export class CcButton extends LitElement {
           -webkit-user-select: none;
           -ms-user-select: none;
           user-select: none;
-          width: 100%;
-          color: blue !important;
         }
 
         /* COLORS */
@@ -376,7 +374,7 @@ export class CcButton extends LitElement {
         }
 
         .primary {
-          --btn-color: blue;
+          --btn-color: var(--cc-color-bg-primary);
         }
 
         .success {
@@ -678,4 +676,4 @@ export class CcButton extends LitElement {
   }
 }
 
-window.customElements.define('cc-button', CcButton);
+customElements.define('cc-button', CcButton);
