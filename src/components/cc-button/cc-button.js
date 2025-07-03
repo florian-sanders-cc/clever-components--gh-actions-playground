@@ -588,6 +588,10 @@ export class CcButton extends LitElement {
           width: var(--width);
         }
 
+        :host-context(.no-animations) progress.waiting {
+          animation: none !important;
+        }
+
         /* circle waiting mode - keyframes */
         @keyframes rotate {
           100% {
@@ -634,12 +638,20 @@ export class CcButton extends LitElement {
           vertical-align: middle;
         }
 
+        :host-context(.no-animations) .circle-loader {
+          animation: none !important;
+        }
+
         .circle-loader circle {
           animation: stretch calc(var(--bcw-speed) * 0.75) ease-in-out infinite;
           stroke: currentcolor;
           stroke-dasharray: 1, 200;
           stroke-dashoffset: 0;
           stroke-linecap: round;
+        }
+
+        :host-context(.no-animations) .circle-loader circle {
+          animation: none !important;
         }
 
         /* We can do this because we set a visible focus state */
