@@ -1,13 +1,9 @@
 // eslint-disable-next-line import/extensions
 import { visualRegressionPlugin } from '@web/test-runner-visual-regression/plugin';
 import { CellarClient } from '../../tasks/cellar-client.js';
-import { VISUAL_TEST_CELLAR_BUCKET_NAME, VISUAL_UPDATE_FLAG, getScreenshotPath } from './visual-tests-utils.js';
+import { VISUAL_TESTS_CELLAR_CREDENTIALS, VISUAL_TESTS_UPDATE_FLAG, getScreenshotPath } from './visual-tests-utils.js';
 
-const cellar = new CellarClient({
-  bucket: VISUAL_TEST_CELLAR_BUCKET_NAME,
-  accessKeyId: process.env.VISUAL_TESTS_CELLAR_KEY_ID,
-  secretAccessKey: process.env.VISUAL_TESTS_CELLAR_SECRET_KEY,
-});
+const cellar = new CellarClient(VISUAL_TESTS_CELLAR_CREDENTIALS);
 
 export const visualRegressionPluginWithConfig = visualRegressionPlugin({
   // see https://github.com/mapbox/pixelmatch?tab=readme-ov-file#api for more info
@@ -17,7 +13,7 @@ export const visualRegressionPluginWithConfig = visualRegressionPlugin({
     diffColor: [30, 30, 30], // color of different pixels in diff output
     diffColorAlt: [255, 0, 0], // whether to detect dark on light differences between img1 and img2 and set an alternative color to differentiate between the two
   },
-  update: process.argv.includes(VISUAL_UPDATE_FLAG),
+  update: process.argv.includes(VISUAL_TESTS_UPDATE_FLAG),
   getBaselineName({ browser, name: componentWithStoryName }) {
     return getScreenshotPath({ browser, componentWithStoryName, screenshotType: 'expectation' });
   },
@@ -28,7 +24,7 @@ export const visualRegressionPluginWithConfig = visualRegressionPlugin({
     return getScreenshotPath({ browser, componentWithStoryName, screenshotType: 'actual' });
   },
   async getBaseline({ name }) {
-    if (process.argv.includes(VISUAL_UPDATE_FLAG)) {
+    if (process.argv.includes(VISUAL_TESTS_UPDATE_FLAG)) {
       return null;
     }
 

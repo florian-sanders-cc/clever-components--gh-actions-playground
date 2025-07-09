@@ -10,7 +10,7 @@ export default {
   browsers: [
     playwrightLauncher({
       product: 'chromium',
-      concurrency: 5,
+      concurrency: process.env.CI ? 1 : 3,
       createBrowserContext({ browser }) {
         return browser.newContext({ timezoneId: 'Europe/Paris', reducedMotion: 'reduce' });
       },

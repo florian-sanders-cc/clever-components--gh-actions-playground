@@ -1,6 +1,11 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { kebabCase } from '../../src/lib/change-case.js';
-import { VISUAL_UPDATE_FLAG, getScreenshotUrl } from './visual-tests-utils.js';
+import {
+  VISUAL_TESTS_RAW_REPORT_NAME,
+  VISUAL_TESTS_REPORTS_DIR,
+  VISUAL_TESTS_UPDATE_FLAG,
+  getScreenshotUrl,
+} from './visual-tests-utils.js';
 
 /**
  * @typedef {import('@web/test-runner').Reporter} Reporter
@@ -13,7 +18,7 @@ import { VISUAL_UPDATE_FLAG, getScreenshotUrl } from './visual-tests-utils.js';
 export function visualTestsJsonReporter() {
   return {
     onTestRunFinished({ sessions }) {
-      if (process.argv.includes(VISUAL_UPDATE_FLAG)) {
+      if (process.argv.includes(VISUAL_TESTS_UPDATE_FLAG)) {
         console.log('Expectation update detected: Skipping report');
         return;
       }
@@ -68,13 +73,13 @@ export function visualTestsJsonReporter() {
         }
       }
 
-      mkdirSync('test-reports', { recursive: true });
+      mkdirSync(VISUAL_TESTS_REPORTS_DIR, { recursive: true });
       writeFileSync(
-        'test-reports/visual-tests-results.json',
+        `${VISUAL_TESTS_REPORTS_DIR}/${VISUAL_TESTS_RAW_REPORT_NAME}`,
         JSON.stringify({ results: visualTestsResults }, null, 2),
         'utf-8',
       );
-      console.log('Generated visual tests report in "test-reports/visual-tests-results.json"');
+      console.log(`Generated visual tests report in "${VISUAL_TESTS_REPORTS_DIR}/${VISUAL_TESTS_RAW_REPORT_NAME}"`);
     },
   };
 }
