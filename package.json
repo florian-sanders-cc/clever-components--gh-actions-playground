@@ -59,6 +59,8 @@
     "test:mocha:watch": "mocha --watch test-mocha/**/*.*js",
     "test:watch": "wtr --watch",
     "test:watch:group": "wtr --watch --group",
+    "test:visual": "wtr --config web-test-runner.config.visual-tests.js",
+    "test:visual:update-baseline": "wtr --config web-test-runner.config.visual-tests.js --update-visual-baseline",
     "typecheck": "tsc -p tsconfig.ci.json",
     "typecheck:stats": "node tasks/typechecking-stats.js"
   },
@@ -115,6 +117,8 @@
     "@web/test-runner-chrome": "^0.17.0",
     "@web/test-runner-commands": "^0.9.0",
     "@web/test-runner-mocha": "^0.9.0",
+    "@web/test-runner-playwright": "^0.11.1",
+    "@web/test-runner-visual-regression": "^0.10.0",
     "babel-loader": "^8.2.2",
     "babel-plugin-inline-svg": "^1.2.0",
     "babel-plugin-template-html-minifier": "^4.1.0",
