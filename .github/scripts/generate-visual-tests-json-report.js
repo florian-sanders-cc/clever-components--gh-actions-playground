@@ -11,8 +11,6 @@ const paths = globSync(`${VISUAL_TESTS_REPORTS_DIR}/**/${VISUAL_TESTS_RAW_REPORT
 
 let concatenatedResults = [];
 
-console.log(paths);
-
 const jsonModules = await Promise.all(
   paths.map((path) =>
     import(path, { with: { type: 'json' } })
@@ -28,6 +26,7 @@ jsonModules.map(({ default: report }) => {
   concatenatedResults = [...concatenatedResults, ...report.results];
 });
 
+/** @type {import('./visual-tests-report.types.js').VisualTestsReport} */
 const finalJsonReport = {
   expectationMetadata: {
     commitReference: process.env.BASE_COMMIT_SHA,
@@ -39,7 +38,9 @@ const finalJsonReport = {
   },
   workflowId: process.env.WORKFLOW_ID,
   prNumber: process.env.PR_NUMBER,
-  branch: BRANCH_NAME,
+  branchName: BRANCH_NAME,
+  repositoryName: process.env.REPOSITORY_NAME,
+  repositoryOwner: process.env.REPOSITORY_OWNER,
   impactedComponents: [...new Set(concatenatedResults.map((result) => result.componentTagName))],
   results: concatenatedResults,
 };

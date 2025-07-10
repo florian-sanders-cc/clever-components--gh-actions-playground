@@ -11,6 +11,7 @@ import {
  * @typedef {import('@web/test-runner').Reporter} Reporter
  * @typedef {import('@web/test-runner').TestSuiteResult} TestSuiteResult
  * @typedef {import('./visual-tests-json-reporter.types.js').VisualTestResult} VisualTestResult
+ * @typedef {import('./visual-tests-json-reporter.types.js').BrowserName} BrowserName
  * @typedef {import('./visual-tests-json-reporter.types.js').ViewportType} ViewportType
  */
 
@@ -27,7 +28,7 @@ export function visualTestsJsonReporter() {
       const visualTestsResults = [];
 
       for (const { browser, testResults } of sessions) {
-        const browserName = browser.name;
+        const browserName = /** @type {BrowserName} */ (browser.name.toLocaleLowerCase());
         for (const { name: componentTagName, suites: componentSuites } of testResults.suites) {
           for (const { name: storyName, suites: storySuites } of componentSuites) {
             for (const {
