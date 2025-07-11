@@ -69,16 +69,13 @@ const html = `
           }
         });
 
+        // handle browser history API (backward / forward in history)
         window.addEventListener('popstate', (event) => {
           let testResultId;
           if (event.state && event.state.testResultId) {
             testResultId = event.state.testResultId;
-          } else {
-            // initial page load has no queryParams set so we need a fallback just in case the user goes backward in history and lands on such case
-            // if there is no result id in queryParams, the component will fallback to the first result (first in its inner sorted results) entry on its own
-            testResultId = getTestResultIdFromQueryParams();
+            navigateTo(testResultId);
           }
-          navigateTo(testResultId);
         });
 
         function navigateTo(testResultId) {

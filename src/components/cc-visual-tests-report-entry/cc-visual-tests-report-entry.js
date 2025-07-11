@@ -13,12 +13,6 @@ import '../cc-img-comparator/cc-img-comparator.js';
 import '../cc-link/cc-link.js';
 import '../cc-toggle/cc-toggle.js';
 
-/**
- * @typedef {import('../cc-visual-tests-report/visual-tests-report.types.js').VisualTestResult} VisualTestResult
- * @typedef {import('../cc-visual-tests-report/visual-tests-report.types.js').VisualTestScreenshots} VisualTestScreenshots
- * @typedef {import('../cc-toggle/cc-toggle.types.js').Choice} Choice
- */
-
 /** @satisfies {Choice[]} */
 const CHOICES = /** @type {const} */ ([
   {
@@ -45,6 +39,12 @@ const VIEWPORT_ICONS = /** @type {const} */ ({
   desktop: iconRemixComputerLine,
   mobile: iconRemixSmartphoneLine,
 });
+
+/**
+ * @typedef {import('../cc-visual-tests-report/visual-tests-report.types.js').VisualTestResult} VisualTestResult
+ * @typedef {import('../cc-visual-tests-report/visual-tests-report.types.js').VisualTestScreenshots} VisualTestScreenshots
+ * @typedef {import('../cc-toggle/cc-toggle.types.js').Choice} Choice
+ */
 
 export class CcVisualTestsReportEntry extends LitElement {
   static get properties() {

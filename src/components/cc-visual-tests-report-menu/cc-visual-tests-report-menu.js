@@ -132,7 +132,7 @@ export class CcVisualTestsReportMenu extends LitElement {
        * - when using the prev / next links.
        */
       const activeLinkElement = this.shadowRoot.querySelector('.viewport-browser-list__item__link--active');
-      if (!isVisibleInContainer(activeLinkElement, this._componentListRef.value)) {
+      if (activeLinkElement != null && !isVisibleInContainer(activeLinkElement, this._componentListRef.value)) {
         activeLinkElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
     }

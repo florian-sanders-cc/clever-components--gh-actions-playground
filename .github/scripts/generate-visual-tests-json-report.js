@@ -9,6 +9,7 @@ import {
 
 const paths = globSync(`${VISUAL_TESTS_REPORTS_DIR}/**/${VISUAL_TESTS_RAW_REPORT_NAME}`, { absolute: true });
 
+/** @type {import('../../src/components/cc-visual-tests-report/visual-tests-report.types.js').VisualTestResult[]} */
 let concatenatedResults = [];
 
 const jsonModules = await Promise.all(
@@ -26,7 +27,7 @@ jsonModules.map(({ default: report }) => {
   concatenatedResults = [...concatenatedResults, ...report.results];
 });
 
-/** @type {import('./visual-tests-report.types.js').VisualTestsReport} */
+/** @type {import('../../src/components/cc-visual-tests-report/visual-tests-report.types.js').VisualTestsReport} */
 const finalJsonReport = {
   expectationMetadata: {
     commitReference: process.env.BASE_COMMIT_SHA,
@@ -52,7 +53,10 @@ writeFileSync(`${VISUAL_TESTS_REPORTS_DIR}/${VISUAL_TESTS_FINAL_REPORT_NAME}`, J
 
 if (process.env.GITHUB_OUTPUT != null) {
   appendFileSync(process.env.GITHUB_OUTPUT, `nb-of-impacted-components=${finalJsonReport.impactedComponents.length}\n`);
-  appendFileSync(process.env.GITHUB_OUTPUT, `impacted-components=${finalJsonReport.impactedComponents}\n`);
+  const impactedComponentsMarkdownList = finalJsonReport.impactedComponents.map(
+    (impactedComponent) => `- ${impactedComponent}\n`,
+  );
+  appendFileSync(process.env.GITHUB_OUTPUT, `impacted-components-md=${impactedComponentsMarkdownList}\n`);
 }
 
 console.log(`Generated final JSON visual tests report: ${VISUAL_TESTS_REPORTS_DIR}/${VISUAL_TESTS_FINAL_REPORT_NAME}`);

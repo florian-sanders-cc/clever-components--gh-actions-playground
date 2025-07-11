@@ -74,12 +74,12 @@ export const getStories = (importedModule) => {
  */
 export async function getAllElements(root) {
   /** @type {Array<HTMLElement>} */
-  const allNodes = [];
+  const allElements = [];
 
   /** @param {Element|DocumentFragment} root */
   async function collectAllElements(root) {
     if (root instanceof HTMLElement) {
-      allNodes.push(root);
+      allElements.push(root);
     }
 
     if (root instanceof LitElement) {
@@ -103,7 +103,7 @@ export async function getAllElements(root) {
 
   await collectAllElements(root);
 
-  return allNodes;
+  return allElements;
 }
 /**
  * Cancels all JS animations and disables CSS animations/transitions for the given elements.
@@ -119,7 +119,7 @@ export async function cancelAnimations(elements) {
       // AdoptedStylesheets are shared for all component instances so we only need to process them once
       const nbOfSheets = element.shadowRoot.adoptedStyleSheets.length;
       // Append last stylesheet or create one
-      let sheet = element.shadowRoot.adoptedStyleSheets[nbOfSheets - 1] ?? new CSSStyleSheet();
+      const sheet = element.shadowRoot.adoptedStyleSheets[nbOfSheets - 1] ?? new CSSStyleSheet();
       sheet.insertRule(`
         * {
           transition: none !important;

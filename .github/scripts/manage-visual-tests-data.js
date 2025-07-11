@@ -1,4 +1,5 @@
 import { appendFileSync } from 'node:fs';
+import { DateFormatter } from '../../src/lib/date/date-formatter.js';
 import { CellarClient } from '../../tasks/cellar-client.js';
 import {
   BRANCH_NAME,
@@ -51,7 +52,7 @@ async function uploadReport() {
 
   const reportUrl = new URL(VISUAL_TESTS_REMOTE_REPORT_DIR, VISUAL_TESTS_CELLAR_BASE_URL);
   if (process.env.GITHUB_OUTPUT != null) {
-    appendFileSync(process.env.GITHUB_OUTPUT, `report_url=${reportUrl}\n`);
+    appendFileSync(process.env.GITHUB_OUTPUT, `reports_url=${reportUrl}\n`);
   }
   console.log('Report uploaded to: ' + reportUrl);
 }
@@ -66,6 +67,7 @@ async function deleteReportAndAssociatedData() {
 }
 
 async function checkForLastExpectationUpdate() {
+  const dateFormatter = new DateFormatter('datetime-short', 'local');
   try {
     console.log('Fetching last report', VISUAL_TESTS_REMOTE_REPORT_PATH);
     const { expectationMetadata } = await cellar.getObject({
@@ -80,14 +82,16 @@ async function checkForLastExpectationUpdate() {
     const shouldUpdateExpectation = baseCommitSha !== expectationMetadata.commitSha;
 
     if (process.env.GITHUB_OUTPUT != null) {
+      appendFileSync(process.env.GITHUB_OUTPUT, `should-update-expectation=${shouldUpdateExpectation}\n`);
+      appendFileSync(process.env.GITHUB_OUTPUT, `last-expectation-update-utc=${expectationMetadata.lastUpdated}\n`);
       appendFileSync(
         process.env.GITHUB_OUTPUT,
-        `should-update-expectation=${shouldUpdateExpectation}\nlast-expectation-update=${expectationMetadata.lastUpdated}\n`,
+        `last-expectation-update-local=${dateFormatter.format(new Date(expectationMetadata.lastUpdated))}\n`,
       );
     }
     console.log('Expectation should be updated: ' + shouldUpdateExpectation);
   } catch (error) {
-    if (error.message === 'NoSuchKey') {
+    if (error instanceof Error && error.message === 'NoSuchKey') {
       console.log('No report found. Expectation should be updated');
       appendFileSync(process.env.GITHUB_OUTPUT, `should-update-expectation=true\n`);
     } else {

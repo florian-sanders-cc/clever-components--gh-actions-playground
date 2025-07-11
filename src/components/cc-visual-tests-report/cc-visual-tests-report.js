@@ -1,4 +1,5 @@
 import { LitElement, css, html } from 'lit';
+import { createRef, ref } from 'lit/directives/ref.js';
 import {
   iconRemixGitBranchLine as iconBranch,
   iconRemixGitCommitLine as iconCommit,
@@ -24,6 +25,7 @@ const DATE_FORMATTER_SHORT = new DateFormatter('datetime-short', 'local');
  * @typedef {import('./visual-tests-report.types.js').VisualTestsReport} VisualTestsReport
  * @typedef {import('./visual-tests-report.types.js').VisualTestResult} VisualTestResult
  * @typedef {import('lit').PropertyValues<CcVisualTestsReport>} CcVisualTestsReportPropertyValues
+ * @typedef {import('lit/directives/ref.js').Ref<HTMLElement & { tagName: 'MAIN' }>} HTMLMainElementRef
  */
 
 export class CcVisualTestsReport extends LitElement {
@@ -42,6 +44,9 @@ export class CcVisualTestsReport extends LitElement {
 
     /** @type {VisualTestsReport} */
     this.report = null;
+
+    /** @type {HTMLMainElementRef} */
+    this._mainElementRef = createRef();
 
     /** @type {VisualTestResult[]} */
     this._sortedTestResults = [];
@@ -78,6 +83,14 @@ export class CcVisualTestsReport extends LitElement {
     });
   }
 
+  /**
+   * Links referencing anchor inside Shadow DOM don't work natively (even when both the link and the anchor are within the same Shadow root)
+   * see https://github.com/WICG/webcomponents/issues/1048
+   */
+  _skipToMain() {
+    this._mainElementRef.value?.focus();
+  }
+
   /** @param {CcVisualTestsReportPropertyValues} changedProperties */
   willUpdate(changedProperties) {
     if (changedProperties.has('report')) {
@@ -96,7 +109,7 @@ export class CcVisualTestsReport extends LitElement {
       this._sortedTestResults.find((result) => result.id === this.activeTestResultId) ?? this._sortedTestResults[0];
 
     return html`
-      <cc-link class="skip-link" href="#main-content">Skip to content</cc-link>
+      <a class="skip-link" href="#main-content" @click="${this._skipToMain}">Skip to content</a>
       <div class="left">
         <header>
           <a
@@ -120,7 +133,7 @@ export class CcVisualTestsReport extends LitElement {
           ></cc-visual-tests-report-menu>
         </nav>
       </div>
-      <main id="main-content">
+      <main id="main-content" tabindex="-1" ${ref(this._mainElementRef)}>
         ${this._renderMetadata({
           repositoryOwner,
           repositoryName,
@@ -257,7 +270,7 @@ export class CcVisualTestsReport extends LitElement {
       css`
         :host {
           display: grid;
-          grid-template-columns: min(20rem, 100%) 1fr;
+          grid-template-columns: min(20em, 100%) 1fr;
           grid-template-rows: 1fr;
         }
 
@@ -282,11 +295,7 @@ export class CcVisualTestsReport extends LitElement {
 
         .skip-link:focus {
           left: 1em;
-        }
-
-        .left,
-        main {
-          height: 100svh;
+          z-index: 1;
         }
 
         .left {
@@ -294,14 +303,17 @@ export class CcVisualTestsReport extends LitElement {
           border-right: solid 1px var(--cc-color-border-neutral-weak);
           display: grid;
           grid-template-rows: auto auto 1fr;
+          height: 100svh;
+          position: sticky;
+          top: 0;
         }
 
         header {
           align-items: center;
           display: grid;
           gap: 1em;
-          grid-template-columns: 2rem 1fr;
-          padding: 1.5rem 1em;
+          grid-template-columns: 2em 1fr;
+          padding: 1.5em 1em;
         }
 
         h1 {

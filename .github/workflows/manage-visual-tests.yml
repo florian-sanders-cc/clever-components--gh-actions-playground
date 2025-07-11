@@ -54,7 +54,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       should-update-expectation: ${{ steps.check-for-expectation-update.outputs.should-update-expectation }}
-      last-expectation-update: ${{ steps.check-for-expectation-update.outputs.last-expectation-update }}
+      last-expectation-update-utc: ${{ steps.check-for-expectation-update.outputs.last-expectation-update-utc }}
+      last-expectation-update-local: ${{ steps.check-for-expectation-update.outputs.last-expectation-update-local }}
     steps:
       - name: '[Prepare] Checkout'
         uses: actions/checkout@v4
@@ -68,6 +69,10 @@ jobs:
       - name: '[Prepare] Install dependencies'
         run: npm ci
 
+      # Expected outputs:
+      # - should-update-expectation: boolean - true if expectation should be updated (base commit has changed or no previous report was found)
+      # - last-expectation-update-utc: string - date as string representing the last update of the expectation screenshots (UTC)
+      # - last-expectation-update-local: string - date as string representing the last update of the expectation screenshots (Local)
       - name: '[Run] Check for last expectation update'
         id: check-for-expectation-update
         run: node ./.github/scripts/manage-visual-tests-data.js check-for-expectation-update
@@ -109,10 +114,13 @@ jobs:
 
       - name: '[Run] Set last-expectation-update output'
         id: set-last-expectation-update
-        run: echo "last-expectation-update=$(TZ=Europe/Paris date +'%Y-%m-%dT%H:%M:%Sz')" >> $GITHUB_OUTPUT
+        run: |
+          echo "last-expectation-update-utc=$(date +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          echo "last-expectation-update-local=$(TZ="Europe/Paris" date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
 
     outputs:
-      last-expectation-update: ${{ steps.set-last-expectation-update.outputs.last-expectation-update }}
+      last-expectation-update-utc: ${{ steps.set-last-expectation-update.outputs.last-expectation-update-utc }}
+      last-expectation-update-local: ${{ steps.set-last-expectation-update.outputs.last-expectation-update-local }}
 
   run-visual-tests:
     if: github.event.action != 'closed' && contains(github.event.pull_request.labels.*.name, 'run-visual-tests') && !cancelled()
@@ -150,7 +158,9 @@ jobs:
 
       - name: '[Run] set report update date'
         id: set-last-actual-update
-        run: echo "last-actual-update=$(TZ=Europe/Paris date +'%Y-%m-%dT%H:%M:%Sz')" >> $GITHUB_OUTPUT
+        run: |
+          echo "last-actual-update-utc=$(date +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          echo "last-actual-update-local=$(TZ=Europe/Paris date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
 
       - name: '[Run] Upload report to GitHub Actions Artifacts'
         uses: actions/upload-artifact@v4
@@ -160,7 +170,8 @@ jobs:
           retention-days: 1
 
     outputs:
-      last-actual-update: ${{ steps.set-last-actual-update.outputs.last-actual-update }}
+      last-actual-update-utc: ${{ steps.set-last-actual-update.outputs.last-actual-update-utc }}
+      last-actual-update-local: ${{ steps.set-last-actual-update.outputs.last-actual-update-local }}
 
   generate-final-report:
     if: github.event.action != 'closed' && contains(github.event.pull_request.labels.*.name, 'run-visual-tests') && !cancelled()
@@ -190,20 +201,20 @@ jobs:
 
       # Expected outputs:
       # - nb-of-impacted-components: number - number of components with visual changes
-      # - impacted-components: Array<string> - formatted list of impacted components
+      # - impacted-components-md: Array<string> - formatted list of impacted components to be inserted as Markdown
       - name: '[Run] Merge results & generate final JSON report'
         id: merge-results-and-generate-report
         run: node ./.github/scripts/generate-visual-tests-json-report.js
         env:
-          LAST_EXPECTATION_UPDATE: ${{ needs.update-expectation.outputs.last-expectation-update || needs.check-for-expectation-update.outputs.last-expectation-update }}
-          LAST_ACTUAL_UPDATE: ${{ needs.run-visual-tests.outputs.last-actual-update }}
+          LAST_EXPECTATION_UPDATE: ${{ needs.update-expectation.outputs.last-expectation-update-utc || needs.check-for-expectation-update.outputs.last-expectation-update-utc }}
+          LAST_ACTUAL_UPDATE: ${{ needs.run-visual-tests.outputs.last-actual-update-utc }}
 
       - name: '[Run] Generate HTML report'
         if: ${{ steps.merge-results-and-generate-report.outputs.nb-of-impacted-components }} > 0
         run: node ./.github/scripts/generate-visual-tests-html-report.js
 
       # Expected outputs:
-      # - report_url: url where reports have been uploaded to
+      # - reports_url: url where reports have been uploaded to
       - name: '[Run] Upload test reports to Cellar'
         id: 'upload-test-reports'
         run: node ./.github/scripts/manage-visual-tests-data.js upload
@@ -222,19 +233,19 @@ jobs:
 
             The latest visual tests report is available. Please review the results.
 
-            - ${{ steps.merge-results-and-generate-report.outputs.nb-of-impacted-components > 0 && format('[View HTML Report]({0}/index.html)', steps.upload-test-reports.outputs.report_url) || 'No visual changes detected' }}
+            - ${{ steps.merge-results-and-generate-report.outputs.nb-of-impacted-components > 0 && format('[View HTML Report]({0}/index.html)', steps.upload-test-reports.outputs.reports_url) || '**No visual changes detected**' }}
             - Baseline info:
               - Commit: ${{ github.event.pull_request.base.sha }}
-              - Last update: ${{ needs.update-expectation.outputs.last-expectation-update || needs.check-for-expectation-update.outputs.last-expectation-update }}
+              - Last update: ${{ needs.update-expectation.outputs.last-expectation-update-local || needs.check-for-expectation-update.outputs.last-expectation-update-local }}
             - Changes info:
               - Commit: ${{ github.event.pull_request.head.sha }}
-              - Last update: ${{ needs.run-visual-tests.outputs.last-actual-update }}
+              - Last update: ${{ needs.run-visual-tests.outputs.last-actual-update-local }}
             - Workflow run: [${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
             <details>
               <summary>${{ steps.merge-results-and-generate-report.outputs.nb-of-impacted-components }} components impacted</summary>
 
-            ${{ steps.merge-results-and-generate-report.outputs.impacted-components }}
+            ${{ steps.merge-results-and-generate-report.outputs.impacted-components-md }}
 
             </details>
 
