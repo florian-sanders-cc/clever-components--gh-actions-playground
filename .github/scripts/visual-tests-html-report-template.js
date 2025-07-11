@@ -2,7 +2,6 @@
 import { html } from '@lit-labs/ssr';
 import { css } from 'lit';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import { generateDevHubHref } from '../../src/lib/utils.js';
 
 /**
  * @typedef {import('./visual-tests-types.js').VisualTestsReport} VisualTestsReport
@@ -28,40 +27,7 @@ export function visualTestsHtmlReport(report) {
         ></script>
       </head>
       <body>
-        <a class="skip-link" href="#main-content">Skip to content</a>
-        <div class="left">
-          <header>
-            <a
-              class="storybook-link"
-              href="${generateDevHubHref('clever-components/?path=/docs/readme--docs')}"
-              title="Clever Components - Storybook - new window"
-              target="_blank"
-              rel="noopener"
-            >
-              <img
-                src="https://assets.clever-cloud.com/login-assets/img/logo.svg"
-                alt="Clever Components - Storybook"
-                width="200"
-              />
-            </a>
-            <h1>Visual tests report</h1>
-          </header>
-          <nav aria-label="Visual tests report menu">
-            <cc-visual-tests-menu></cc-visual-tests-menu>
-          </nav>
-        </div>
-        <main id="main-content">
-          ${metadataTemplate({
-            repositoryOwner,
-            repositoryName,
-            prNumber,
-            workflowId,
-            branchName,
-            expectationMetadata,
-            actualMetadata,
-          })}
-          <cc-visual-tests-entry></cc-visual-tests-entry>
-        </main>
+        <cc-visual-tests-report></cc-visual-tests-report>
         <script type="module">
           const entityDecoder = document.createElement('textarea');
           // TODO: should we sanitize just in case?!

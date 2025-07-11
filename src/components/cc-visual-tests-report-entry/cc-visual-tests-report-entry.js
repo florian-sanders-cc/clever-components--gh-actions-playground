@@ -10,29 +10,28 @@ import {
 import { camelCaseToSpacedCapitalized } from '../../lib/change-case.js';
 import { enhanceStoryName } from '../../stories/lib/story-names.js';
 import '../cc-img-comparator/cc-img-comparator.js';
-import '../cc-img/cc-img.js';
 import '../cc-link/cc-link.js';
 import '../cc-toggle/cc-toggle.js';
 
 /**
- * @typedef {import('../../../web-test-runner/visual-tests/visual-tests-json-reporter.types.js').VisualTestResult} VisualTestResult
- * @typedef {import('../../../web-test-runner/visual-tests/visual-tests-json-reporter.types.js').VisualTestScreenshots} VisualTestScreenshots
+ * @typedef {import('../cc-visual-tests-report/visual-tests-report.types.js').VisualTestResult} VisualTestResult
+ * @typedef {import('../cc-visual-tests-report/visual-tests-report.types.js').VisualTestScreenshots} VisualTestScreenshots
  * @typedef {import('../cc-toggle/cc-toggle.types.js').Choice} Choice
  */
 
 /** @satisfies {Choice[]} */
 const CHOICES = /** @type {const} */ ([
   {
-    label: 'Image comparison',
-    value: 'comparison',
-  },
-  {
     label: 'Three way diff',
     value: 'diff',
   },
+  {
+    label: 'Image comparison',
+    value: 'comparison',
+  },
 ]);
 
-const DEFAULT_CHOICE = 'comparison';
+const DEFAULT_CHOICE = 'diff';
 
 const BROWSER_ICONS = /** @type {const} */ ({
   chrome: iconRemixChromeLine,
@@ -77,10 +76,14 @@ export class CcVisualTestsReportEntry extends LitElement {
 
     const { componentTagName, storyName, viewportType, browserName, screenshots } = this.testResult;
     const formattedStoryName = enhanceStoryName(camelCaseToSpacedCapitalized(storyName));
+
     return html`
       <header class="header">
         <div class="main-heading">
-          <span><cc-icon .icon="${iconRemixCodeLine}"></cc-icon> ${componentTagName}</span>
+          <span>
+            <cc-icon .icon="${iconRemixCodeLine}"></cc-icon>
+            <span>${componentTagName}</span>
+          </span>
           <span>&nbsp;| ${formattedStoryName}</span>
           <cc-icon .icon="${VIEWPORT_ICONS[viewportType]}" a11y-name="${viewportType}"></cc-icon>
           <cc-icon .icon="${BROWSER_ICONS[browserName]}" a11y-name="${browserName}"></cc-icon>
@@ -108,15 +111,25 @@ export class CcVisualTestsReportEntry extends LitElement {
     return html`
       <div class="three-way-diff">
         <div class="three-way-diff__side-by-side">
-          <div class="heading">
-            <cc-link href="${expectationScreenshotUrl}"> Expectation </cc-link>
+          <div class="viewbox viewbox--half">
+            <div class="heading">
+              <cc-link href="${expectationScreenshotUrl}">Expectation</cc-link>
+            </div>
+            <img class="viewbox__img" src="${expectationScreenshotUrl}" alt="" />
           </div>
-          <img src="${expectationScreenshotUrl}" alt="" />
-          <cc-link href="${actualScreenshotUrl}"> Actual </cc-link>
-          <img src="${actualScreenshotUrl}" alt="" />
+          <div class="viewbox viewbox--half">
+            <div class="heading">
+              <cc-link href="${actualScreenshotUrl}">Actual</cc-link>
+            </div>
+            <img class="viewbox__img" src="${actualScreenshotUrl}" alt="" />
+          </div>
         </div>
-        <cc-link href="${diffScreenshotUrl}">Diff</cc-link>
-        <img src="${diffScreenshotUrl}" alt="" />
+        <div class="viewbox">
+          <div class="heading">
+            <cc-link href="${diffScreenshotUrl}">Diff</cc-link>
+          </div>
+          <img class="viewbox__img" src="${diffScreenshotUrl}" alt="" />
+        </div>
       </div>
     `;
   }
@@ -178,7 +191,21 @@ export class CcVisualTestsReportEntry extends LitElement {
           gap: 1em;
         }
 
-        img {
+        .viewbox {
+          border: solid 1px var(--cc-color-border-neutral);
+          border-radius: var(--cc-border-radius-default);
+          box-sizing: border-box;
+          overflow: hidden;
+        }
+
+        .viewbox--half {
+          flex: 1 1 45%;
+          min-width: min(16em, 100%);
+          overflow: hidden;
+          width: 45%;
+        }
+
+        .viewbox__img {
           display: block;
           max-height: 30rem;
           max-width: 100%;
@@ -186,26 +213,18 @@ export class CcVisualTestsReportEntry extends LitElement {
           width: 100%;
         }
 
-        .three-way-diff__side-by-side a {
-          border: solid 1px var(--cc-color-border-neutral);
-          border-radius: var(--cc-border-radius-default);
-          box-sizing: border-box;
-          flex: 1 1 45%;
-          min-width: min(16em, 100%);
-          overflow: hidden;
-          width: 45%;
-        }
-
         .diff {
           border: solid 1px var(--cc-color-border-neutral);
           border-radius: var(--cc-border-radius-default);
           display: block;
-          overflow: hidden;
         }
 
         cc-img-comparator {
           border: solid 1px var(--cc-color-border-neutral);
           border-radius: var(--cc-border-radius-default);
+          margin-inline: auto;
+          max-width: max-content;
+          overflow: hidden;
         }
       `,
     ];

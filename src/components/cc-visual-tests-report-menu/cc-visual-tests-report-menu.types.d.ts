@@ -1,8 +1,8 @@
-import { VisualTestResult } from '../../../web-test-runner/visual-tests/visual-tests-json-reporter.types.js';
+import { VisualTestResult } from '../cc-visual-tests-report/visual-tests-report.types.js';
 
 export type VisualTestsReportMenuViewportEntry = {
   viewportType: VisualTestResult['viewportType'];
-  browserName: string;
+  browserName: VisualTestResult['browserName'];
   id: string;
 };
 

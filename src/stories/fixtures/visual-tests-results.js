@@ -31,7 +31,7 @@ const ccDomainManagementEmptyMobileActual = new URL('../../stories/assets/cc-dom
 const ccDomainManagementEmptyMobileDiff = new URL('../../stories/assets/cc-domain-management-empty-mobile-diff.png', import.meta.url).href;
 
 
-/** @satisfies {import('../../../web-test-runner/visual-tests/visual-tests-json-reporter.types.js').VisualTestResult[]} */
+/** @satisfies {import('../../components/cc-visual-tests-report/visual-tests-report.types.js').VisualTestResult[]} */
 export const visualTestsResults = /** @type {const} */ ([
   {
     id: 'cc-addon-admin-default-story-desktop-chromium',

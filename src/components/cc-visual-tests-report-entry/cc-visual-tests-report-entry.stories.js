@@ -13,36 +13,40 @@ const conf = {
   css: `
     :host {
       max-width: 100% !important;
-      height: 100vh;
-    }
-
-    cc-visual-tests-report-entry {
-      height: 100%;
     }
   `,
 };
 
+/**
+ * @typedef {import('./cc-visual-tests-report-entry.js').CcVisualTestsReportEntry} CcVisualTestsReportEntry
+ */
+
+const visualTestResult = visualTestsResults.find(({ id }) => id === 'cc-article-list-data-loaded-desktop-chromium');
+
 export const defaultStory = makeStory(conf, {
+  /** @type {Partial<CcVisualTestsReportEntry>[]} */
   items: [
     {
-      testResult: visualTestsResults[0],
+      testResult: visualTestResult,
     },
   ],
 });
 
 export const comparison = makeStory(conf, {
+  /** @type {Partial<CcVisualTestsReportEntry>[]} */
   items: [
     {
-      testResult: visualTestsResults[0],
+      testResult: visualTestResult,
       viewerMode: 'comparison',
     },
   ],
 });
 
 export const diff = makeStory(conf, {
+  /** @type {Partial<CcVisualTestsReportEntry>[]} */
   items: [
     {
-      testResult: visualTestsResults[0],
+      testResult: visualTestResult,
       viewerMode: 'diff',
     },
   ],

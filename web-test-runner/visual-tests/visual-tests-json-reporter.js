@@ -10,9 +10,9 @@ import {
 /**
  * @typedef {import('@web/test-runner').Reporter} Reporter
  * @typedef {import('@web/test-runner').TestSuiteResult} TestSuiteResult
- * @typedef {import('./visual-tests-json-reporter.types.js').VisualTestResult} VisualTestResult
- * @typedef {import('./visual-tests-json-reporter.types.js').BrowserName} BrowserName
- * @typedef {import('./visual-tests-json-reporter.types.js').ViewportType} ViewportType
+ * @typedef {import('../../src/components/cc-visual-tests-report/visual-tests-report.types.js').VisualTestResult} VisualTestResult
+ * @typedef {import('../../src/components/cc-visual-tests-report/visual-tests-report.types.js').BrowserName} BrowserName
+ * @typedef {import('../../src/components/cc-visual-tests-report/visual-tests-report.types.js').ViewportType} ViewportType
  */
 
 /** @returns {Reporter} */

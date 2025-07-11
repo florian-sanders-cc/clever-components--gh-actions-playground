@@ -10,7 +10,7 @@ import { enhanceStoryName } from '../../stories/lib/story-names.js';
 import '../cc-icon/cc-icon.js';
 
 /**
- * @typedef {import('../../../web-test-runner/visual-tests/visual-tests-json-reporter.types.js').VisualTestResult} VisualTestResult
+ * @typedef {import('../cc-visual-tests-report/visual-tests-report.types.js').VisualTestResult} VisualTestResult
  * @typedef {import('./cc-visual-tests-report-menu.types.js').VisualTestsReportMenuEntries} VisualTestsReportMenuEntries
  * @typedef {import('../../lib/events.types.js').EventWithTarget<HTMLAnchorElement>} HTMLAnchorEvent
  * @typedef {import('lit').PropertyValues<CcVisualTestsReportMenu>} CcVisualChangesReportMenuPropertyValues
@@ -240,7 +240,7 @@ export class CcVisualTestsReportMenu extends LitElement {
                   class="viewport-browser-list__item__link ${classMap({
                     'viewport-browser-list__item__link--active': this.activeTestResultId === id,
                   })}"
-                  href="/test-result/${id}"
+                  href="?testResultId=${id}"
                 >
                   <span>${viewportType} - ${browserName}</span>
                   <cc-icon .icon="${iconArrowRight}"></cc-icon>
@@ -345,7 +345,6 @@ export class CcVisualTestsReportMenu extends LitElement {
           background-color: var(--cc-color-bg-neutral-alt);
           display: flex;
           flex-direction: column;
-          gap: 0.5em;
           padding: 0.5em 1em;
           transition: background-color 0.3s;
         }
