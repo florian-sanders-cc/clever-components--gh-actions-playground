@@ -240,7 +240,7 @@ export class CcVisualTestsReportMenu extends LitElement {
                   class="viewport-browser-list__item__link ${classMap({
                     'viewport-browser-list__item__link--active': this.activeTestResultId === id,
                   })}"
-                  href="?testResultId=${id}"
+                  href="/test-result/${id}"
                 >
                   <span>${viewportType} - ${browserName}</span>
                   <cc-icon .icon="${iconArrowRight}"></cc-icon>

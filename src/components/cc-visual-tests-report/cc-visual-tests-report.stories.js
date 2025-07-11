@@ -44,5 +44,28 @@ const report = {
 
 export const defaultStory = makeStory(conf, {
   /** @type {Partial<CcVisualTestsReport>[]} */
-  items: [{ report }],
+  items: [
+    {
+      report,
+    },
+  ],
+  /** @param {CcVisualTestsReport} component */
+  onUpdateComplete: (component) => {
+    component.addEventListener('click', (e) => {
+      const linkElement = /** @type {HTMLAnchorElement|null} */ (
+        e.composedPath().find((element) => element instanceof HTMLAnchorElement)
+      );
+
+      if (
+        linkElement != null &&
+        linkElement.origin === window.location.origin &&
+        linkElement.pathname.startsWith('/test-result/')
+      ) {
+        e.preventDefault();
+        const testResultId = linkElement.pathname.split('/').pop();
+
+        component.activeTestResultId = testResultId;
+      }
+    });
+  },
 });
