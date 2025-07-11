@@ -21,7 +21,10 @@ const MANIFEST_VERSION = 1;
 const SOURCE_DIR = 'dist-cdn';
 
 const SEMVER_ENTRY_COMPARATOR = (e1, e2) => semver.rcompare(e1.name, e2.name);
-const DEFAULT_ENTRY_COMPARATOR = (e1, e2) => e1.name.localeCompare(e2.name, null, { sensitivity: 'base' });
+const DEFAULT_ENTRY_COMPARATOR = (e1, e2) => {
+  console.log(e1.name, e2.name);
+  return e1.name.localeCompare(e2.name, null, { sensitivity: 'base' });
+};
 
 /**
  * The class manages CDN entries stored in a Clever Cloud Cellar addon.
@@ -94,6 +97,7 @@ export class CdnManager {
       if (previewIndex !== -1) {
         manifest.entries[previewIndex] = manifestEntry;
       } else {
+        console.log(manifestEntry, manifest.entries);
         const comparator = manifest.semver ? SEMVER_ENTRY_COMPARATOR : DEFAULT_ENTRY_COMPARATOR;
         manifest.entries = [manifestEntry, ...manifest.entries].sort(comparator);
       }
