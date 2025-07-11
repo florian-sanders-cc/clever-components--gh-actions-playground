@@ -1,10 +1,18 @@
 import { LitElement, css, html } from 'lit';
+import {
+  iconRemixGitBranchLine as iconBranch,
+  iconRemixGitCommitLine as iconCommit,
+  iconRemixCalendarScheduleLine as iconDate,
+  iconRemixGitPullRequestLine as iconPr,
+  iconRemixFlowChart as iconWorkflow,
+} from '../../assets/cc-remix.icons.js';
 import { DateFormatter } from '../../lib/date/date-formatter.js';
 import { generateDevHubHref } from '../../lib/utils.js';
 import { accessibilityStyles } from '../../styles/accessibility.js';
 import '../cc-block-section/cc-block-section.js';
 import '../cc-block/cc-block.js';
 import '../cc-datetime-relative/cc-datetime-relative.js';
+import '../cc-icon/cc-icon.js';
 import '../cc-img/cc-img.js';
 import '../cc-link/cc-link.js';
 import '../cc-visual-tests-report-entry/cc-visual-tests-report-entry.js';
@@ -14,6 +22,8 @@ const DATE_FORMATTER_SHORT = new DateFormatter('datetime-short', 'local');
 
 /**
  * @typedef {import('./visual-tests-report.types.js').VisualTestsReport} VisualTestsReport
+ * @typedef {import('./visual-tests-report.types.js').VisualTestResult} VisualTestResult
+ * @typedef {import('lit').PropertyValues<CcVisualTestsReport>} CcVisualTestsReportPropertyValues
  */
 
 export class CcVisualTestsReport extends LitElement {
@@ -21,6 +31,7 @@ export class CcVisualTestsReport extends LitElement {
     return {
       activeTestResultId: { type: String, attribute: 'active-test-result-id' },
       report: { type: Object },
+      _sortedTestsResults: { type: Array, state: true },
     };
   }
   constructor() {
@@ -31,13 +42,58 @@ export class CcVisualTestsReport extends LitElement {
 
     /** @type {VisualTestsReport} */
     this.report = null;
+
+    /** @type {VisualTestResult[]} */
+    this._sortedTestResults = [];
+  }
+
+  /**
+   * @param {VisualTestResult[]} testResults
+   * @returns {VisualTestResult[]}
+   */
+  _sortTestResults(testResults) {
+    return [...testResults].sort((a, b) => {
+      const componentCompare = a.componentTagName.localeCompare(b.componentTagName);
+      if (componentCompare !== 0) {
+        return componentCompare;
+      }
+      // If componentTagNames are the same, sort by storyName
+      if (a.storyName === 'defaultStory' && b.storyName !== 'defaultStory') {
+        return -1;
+      }
+      if (a.storyName !== 'defaultStory' && b.storyName === 'defaultStory') {
+        return 1;
+      }
+      const storyCompare = a.storyName.localeCompare(b.storyName);
+      if (storyCompare !== 0) {
+        return storyCompare;
+      }
+      // If storyNames are the same, sort by viewportType
+      const browserNameCompare = a.browserName.localeCompare(b.browserName);
+      if (browserNameCompare !== 0) {
+        return browserNameCompare;
+      }
+      // If viewportTypes are the same, sort by browserName
+      return a.viewportType.localeCompare(b.viewportType);
+    });
+  }
+
+  /** @param {CcVisualTestsReportPropertyValues} changedProperties */
+  willUpdate(changedProperties) {
+    if (changedProperties.has('report')) {
+      this._sortedTestResults = this._sortTestResults(this.report.results);
+    }
   }
 
   render() {
+    if (this.report == null) {
+      return '';
+    }
+
     const { repositoryOwner, repositoryName, prNumber, workflowId, branchName, expectationMetadata, actualMetadata } =
       this.report;
     const activeTestResult =
-      this.report.results.find((result) => result.id === this.activeTestResultId) ?? this.report.results[0];
+      this._sortedTestResults.find((result) => result.id === this.activeTestResultId) ?? this._sortedTestResults[0];
 
     return html`
       <cc-link class="skip-link" href="#main-content">Skip to content</cc-link>
@@ -59,7 +115,7 @@ export class CcVisualTestsReport extends LitElement {
         </header>
         <nav aria-label="Visual tests report menu">
           <cc-visual-tests-report-menu
-            .testResults="${this.report.results}"
+            .testsResults="${this._sortedTestResults}"
             active-test-result-id="${activeTestResult.id}"
           ></cc-visual-tests-report-menu>
         </nav>
@@ -96,7 +152,10 @@ export class CcVisualTestsReport extends LitElement {
           <h3 slot="title">General info</h3>
           <dl class="metadata-list">
             <div class="metadata-list__item">
-              <dt class="metadata-list__item__name">PR Number:</dt>
+              <dt class="metadata-list__item__name">
+                <cc-icon .icon="${iconPr}"></cc-icon>
+                <span>PR Number</span>
+              </dt>
               <dd class="metadata-list__item__value">
                 <cc-link href="https://github.com/${repositoryOwner}/${repositoryName}/pulls/${prNumber}">
                   <span class="visually-hidden">Access PR -</span>
@@ -105,7 +164,10 @@ export class CcVisualTestsReport extends LitElement {
               </dd>
             </div>
             <div class="metadata-list__item">
-              <dt class="metadata-list__item__name">Branch name:</dt>
+              <dt class="metadata-list__item__name">
+                <cc-icon .icon="${iconBranch}"></cc-icon>
+                <span>Branch</span>
+              </dt>
               <dd class="metadata-list__item__value">
                 <cc-link href="https://github.com/${repositoryOwner}/${repositoryName}/tree/${branchName}">
                   <span class="visually-hidden">Access branch -</span>
@@ -114,7 +176,10 @@ export class CcVisualTestsReport extends LitElement {
               </dd>
             </div>
             <div class="metadata-list__item">
-              <dt class="metadata-list__item__name">Workflow Id:</dt>
+              <dt class="metadata-list__item__name">
+                <cc-icon .icon="${iconWorkflow}"></cc-icon>
+                <span>Workflow</span>
+              </dt>
               <dd class="metadata-list__item__value">
                 <cc-link href="https://github.com/${repositoryOwner}/${repositoryName}/actions/runs/${workflowId}">
                   <span class="visually-hidden">Access workflow -</span>
@@ -128,7 +193,10 @@ export class CcVisualTestsReport extends LitElement {
           <h3 slot="title">Expectation</h3>
           <dl class="metadata-list">
             <div class="metadata-list__item">
-              <dt class="metadata-list__item__name">Commit sha:</dt>
+              <dt class="metadata-list__item__name">
+                <cc-icon .icon="${iconCommit}"></cc-icon>
+                <span>Commit sha</span>
+              </dt>
               <dd class="metadata-list__item__value">
                 <cc-link
                   href="https://github.com/${repositoryOwner}/${repositoryName}/commit/${expectationMetadata.commitReference}"
@@ -139,12 +207,13 @@ export class CcVisualTestsReport extends LitElement {
               </dd>
             </div>
             <div class="metadata-list__item">
-              <dt class="metadata-list__item__name">Last update:</dt>
+              <dt class="metadata-list__item__name">
+                <cc-icon .icon="${iconDate}"></cc-icon>
+                <span>Last update</span>
+              </dt>
               <dd class="metadata-list__item__value">
                 <span>${DATE_FORMATTER_SHORT.format(new Date(expectationMetadata.lastUpdated))}</span>
-                <span class="datetime">
-                  | <cc-datetime-relative datetime="${expectationMetadata.lastUpdated}"></cc-datetime-relative>
-                </span>
+                <cc-datetime-relative datetime="${expectationMetadata.lastUpdated}"></cc-datetime-relative>
               </dd>
             </div>
           </dl>
@@ -153,7 +222,10 @@ export class CcVisualTestsReport extends LitElement {
           <h3 slot="title">Actual</h3>
           <dl class="metadata-list">
             <div class="metadata-list__item">
-              <dt class="metadata-list__item__name">Commit sha:</dt>
+              <dt class="metadata-list__item__name">
+                <cc-icon .icon="${iconCommit}"></cc-icon>
+                <span>Commit sha</span>
+              </dt>
               <dd class="metadata-list__item__value">
                 <cc-link
                   href="https://github.com/${repositoryOwner}/${repositoryName}/commit/${actualMetadata.commitReference}"
@@ -164,12 +236,13 @@ export class CcVisualTestsReport extends LitElement {
               </dd>
             </div>
             <div class="metadata-list__item">
-              <dt class="metadata-list__item__name">Last update:</dt>
+              <dt class="metadata-list__item__name">
+                <cc-icon .icon="${iconDate}"></cc-icon>
+                <span>Last update</span>
+              </dt>
               <dd class="metadata-list__item__value">
                 <span>${DATE_FORMATTER_SHORT.format(new Date(actualMetadata.lastUpdated))}</span>
-                <span class="datetime">
-                  | <cc-datetime-relative datetime="${actualMetadata.lastUpdated}"></cc-datetime-relative>
-                </span>
+                <cc-datetime-relative datetime="${actualMetadata.lastUpdated}"></cc-datetime-relative>
               </dd>
             </div>
           </dl>
@@ -202,13 +275,13 @@ export class CcVisualTestsReport extends LitElement {
         .skip-link {
           background-color: #fff;
           left: -9999px;
-          padding: 1rem;
+          padding: 1em;
           position: absolute;
-          top: 1rem;
+          top: 1em;
         }
 
         .skip-link:focus {
-          left: 1rem;
+          left: 1em;
         }
 
         .left,
@@ -216,15 +289,23 @@ export class CcVisualTestsReport extends LitElement {
           height: 100svh;
         }
 
-        main {
-          box-sizing: border-box;
+        .left {
+          background-color: var(--cc-color-bg-neutral);
+          border-right: solid 1px var(--cc-color-border-neutral-weak);
           display: grid;
-          gap: 2rem;
-          grid-template-rows: max-content 1fr;
-          overflow-x: hidden;
-          overflow-y: auto;
-          padding: 1rem;
-          scrollbar-gutter: stable;
+          grid-template-rows: auto auto 1fr;
+        }
+
+        header {
+          align-items: center;
+          display: grid;
+          gap: 1em;
+          grid-template-columns: 2rem 1fr;
+          padding: 1.5rem 1em;
+        }
+
+        h1 {
+          font-size: 1.3em;
         }
 
         .storybook-link {
@@ -248,39 +329,23 @@ export class CcVisualTestsReport extends LitElement {
 
         nav {
           height: 100%;
+          min-height: 0;
+        }
+
+        cc-visual-tests-report-menu {
+          height: 100%;
+          min-height: 0;
+        }
+
+        main {
+          box-sizing: border-box;
+          display: grid;
+          gap: 2em;
+          grid-template-rows: max-content 1fr;
           overflow-x: hidden;
           overflow-y: auto;
+          padding: 1em;
           scrollbar-gutter: stable;
-        }
-
-        .left {
-          background-color: var(--cc-color-bg-neutral);
-          border-right: solid 1px var(--cc-color-border-neutral-weak);
-          display: grid;
-          grid-template-rows: auto auto 1fr;
-        }
-
-        header {
-          align-items: center;
-          display: grid;
-          gap: 1rem;
-          grid-template-columns: 2rem 1fr;
-          padding: 1.5rem 1rem;
-        }
-
-        h1 {
-          font-size: 1.3rem;
-        }
-
-        .info-block-list {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 2rem;
-        }
-
-        .info {
-          display: flex;
-          gap: 0.5rem;
         }
 
         h3 {
@@ -321,22 +386,26 @@ export class CcVisualTestsReport extends LitElement {
         }
 
         .metadata-list__item__name {
+          align-items: center;
           color: var(--cc-color-text-inverted, #fff);
+          display: flex;
+          gap: 0.5em;
         }
 
         .metadata-list__item__value {
+          align-items: center;
           background-color: var(--cc-color-bg-default, #fff);
           border-radius: var(--cc-border-radius-small);
           color: var(--cc-color-text-primary);
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5em;
         }
 
-        .datetime {
+        cc-datetime-relative {
+          border-inline-start: solid 2px var(--cc-color-bg-primary);
           font-style: italic;
-        }
-
-        cc-visual-changes-report-entry {
-          box-sizing: border-box;
-          min-height: 0;
+          padding-left: 0.5em;
         }
       `,
     ];

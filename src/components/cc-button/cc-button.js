@@ -373,7 +373,7 @@ export class CcButton extends LitElement {
         }
 
         .primary {
-          --btn-color: var(--cc-color-bg-primary);
+          --btn-color: blue !important;
         }
 
         .success {

@@ -1,7 +1,4 @@
-import { render } from '@lit-labs/ssr';
-import { collectResultSync } from '@lit-labs/ssr/lib/render-result.js';
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { visualTestsHtmlReport } from './visual-tests-html-report-template.js';
 
 import {
   VISUAL_TESTS_FINAL_REPORT_NAME,
@@ -15,7 +12,87 @@ const { default: visualTestsFinalReport } = await import(
   }
 );
 
-const ssrResult = render(visualTestsHtmlReport(visualTestsFinalReport));
+const html = `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <title>PR ${visualTestsFinalReport.prNumber} - Visual tests Report</title>
+      <link rel="stylesheet" href="https://components.clever-cloud.com/styles.css" />
+      <script
+        type="module"
+        src="https://preview-components.clever-cloud.com/load.js?version=tests-visual-changes&lang=en&components=cc-visual-tests-report"
+      ></script>
+      <style>
+        html, body {
+          margin: 0;
+          padding: 0;
+          font-family: 'Nunito Sans', 'Segoe UI', 'Ubuntu', 'Cantarell', 'Noto Sans', 'Liberation Sans', 'Arial', sans-serif;
+        }
+      </style>
+    </head>
+    <body>
+      <cc-visual-tests-report></cc-visual-tests-report>
+      <script type="module">
+        const rawReport = window['visual-tests-report'].textContent;
+        const report = JSON.parse(rawReport);
+
+        const ccVisualTestsReport = document.querySelector('cc-visual-tests-report');
+        ccVisualTestsReport.report = report;
+
+        function getTestResultIdFromQueryParams() {
+          const currentLocationUrl = new URL(window.location);
+          return currentLocationUrl.searchParams.get('testResultId');
+        }
+
+        const testResultId = getTestResultIdFromQueryParams();
+
+        if (testResultId != null) {
+          navigateTo(testResultId);
+        }
+
+        document.addEventListener('click', (e) => {
+          const linkElement = e.composedPath().find((element) => element instanceof HTMLAnchorElement);
+
+          if (
+            linkElement != null &&
+            linkElement.origin === window.location.origin &&
+            linkElement.pathname.startsWith('/test-result/')
+          ) {
+            e.preventDefault();
+            const testResultId = linkElement.pathname.split('/').pop();
+
+            const url = new URL(window.location);
+            url.searchParams.set('testResultId', testResultId);
+            window.history.pushState({ testResultId }, '', url);
+            navigateTo(testResultId);
+          }
+        });
+
+        window.addEventListener('popstate', (event) => {
+          let testResultId;
+          if (event.state && event.state.testResultId) {
+            testResultId = event.state.testResultId;
+          } else {
+            // initial page load has no queryParams set so we need a fallback just in case the user goes backward in history and lands on such case
+            // if there is no result id in queryParams, the component will fallback to the first result (first in its inner sorted results) entry on its own
+            testResultId = getTestResultIdFromQueryParams();
+          }
+          navigateTo(testResultId);
+        });
+
+        function navigateTo(testResultId) {
+          const testResult = report.results.find((result) => result.id === testResultId);
+          document.title = testResult.componentTagName + ' ' + testResult.storyName + ' ' + testResult.viewportType + ' ' + testResult.browserName + ' | PR ' + report.prNumber + ' | ' + 'Visual Tests Report'
+          ccVisualTestsReport.activeTestResultId = testResultId;
+        }
+      </script>
+      <script type="application/json" id="visual-tests-report">
+        ${JSON.stringify(visualTestsFinalReport)}
+      </script>
+    </body>
+  </html>
+`;
 
 mkdirSync(VISUAL_TESTS_REPORTS_DIR, { recursive: true });
-writeFileSync(`${VISUAL_TESTS_REPORTS_DIR}/index.html`, collectResultSync(ssrResult), { encoding: 'utf-8' });
+writeFileSync(`${VISUAL_TESTS_REPORTS_DIR}/index.html`, html, { encoding: 'utf-8' });

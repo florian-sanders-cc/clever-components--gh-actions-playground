@@ -1,11 +1,13 @@
 import { LitElement, css, html } from 'lit';
 import { classMap } from 'lit/directives/class-map.js';
+import { createRef, ref } from 'lit/directives/ref.js';
 import {
   iconRemixArrowDownSLine as iconArrowDown,
   iconRemixArrowLeftSLine as iconArrowLeft,
   iconRemixArrowRightSLine as iconArrowRight,
 } from '../../assets/cc-remix.icons.js';
 import { camelCaseToSpacedCapitalized, kebabCase } from '../../lib/change-case.js';
+import { isVisibleInContainer } from '../../lib/utils.js';
 import { enhanceStoryName } from '../../stories/lib/story-names.js';
 import '../cc-icon/cc-icon.js';
 
@@ -13,18 +15,17 @@ import '../cc-icon/cc-icon.js';
  * @typedef {import('../cc-visual-tests-report/visual-tests-report.types.js').VisualTestResult} VisualTestResult
  * @typedef {import('./cc-visual-tests-report-menu.types.js').VisualTestsReportMenuEntries} VisualTestsReportMenuEntries
  * @typedef {import('../../lib/events.types.js').EventWithTarget<HTMLAnchorElement>} HTMLAnchorEvent
- * @typedef {import('lit').PropertyValues<CcVisualTestsReportMenu>} CcVisualChangesReportMenuPropertyValues
+ * @typedef {import('lit').PropertyValues<CcVisualTestsReportMenu>} CcVisualTestsReportMenuPropertyValues
+ * @typedef {import('lit/directives/ref.js').Ref<HTMLUListElement>} HTMLUListElementRef
  */
 
 export class CcVisualTestsReportMenu extends LitElement {
   static get properties() {
     return {
       activeTestResultId: { type: String, attribute: 'active-test-result-id' },
-      testResults: { type: Array, attribute: 'test-results' },
+      testsResults: { type: Array, attribute: 'tests-results' },
       _activeMenuEntry: { type: Object, state: true },
       _menuEntries: { type: Array, state: true },
-      _sortedTestResults: { type: Array, state: true },
-      _sortedTestResultsIds: { type: Array, state: true },
     };
   }
 
@@ -35,7 +36,7 @@ export class CcVisualTestsReportMenu extends LitElement {
     this.activeTestResultId = null;
 
     /** @type {VisualTestResult[]} */
-    this.testResults = [];
+    this.testsResults = [];
 
     /** @type {{ component: string, story: string }} */
     this._activeMenuEntry = { component: null, story: null };
@@ -43,11 +44,11 @@ export class CcVisualTestsReportMenu extends LitElement {
     /** @type {VisualTestsReportMenuEntries}  */
     this._menuEntries = [];
 
-    /** @type {VisualTestResult[]} */
-    this._sortedTestResults = [];
-
     /** @type {Array<VisualTestResult['id']>} */
-    this._sortedTestResultsIds = [];
+    this._testsResultsIds = [];
+
+    /** @type {HTMLUListElementRef} */
+    this._componentListRef = createRef();
   }
 
   /**
@@ -100,18 +101,16 @@ export class CcVisualTestsReportMenu extends LitElement {
     this._activeMenuEntry = { ...this._activeMenuEntry, story: isAlreadyActive ? null : kebabCasedStoryName };
   }
 
-  /** @param {CcVisualChangesReportMenuPropertyValues} changedProperties */
+  /** @param {CcVisualTestsReportMenuPropertyValues} changedProperties */
   willUpdate(changedProperties) {
-    if (changedProperties.has('testResults') && this.testResults.length > 0) {
-      this._sortedTestResults = this._sortTestResults(this.testResults);
+    if (changedProperties.has('testsResults') && this.testsResults.length > 0) {
+      this._testsResultsIds = this.testsResults.map(({ id }) => id);
 
-      this._sortedTestResultsIds = this._sortedTestResults.map(({ id }) => id);
-
-      this._menuEntries = this._getMenuEntries(this._sortedTestResults);
+      this._menuEntries = this._getMenuEntries(this.testsResults);
     }
 
-    if (changedProperties.has('activeTestResultId') || changedProperties.has('testResults')) {
-      const activeTestResult = this.testResults.find((testResult) => this.activeTestResultId === testResult.id);
+    if (changedProperties.has('activeTestResultId') || changedProperties.has('testsResults')) {
+      const activeTestResult = this.testsResults.find((testResult) => this.activeTestResultId === testResult.id);
       if (activeTestResult != null) {
         this._activeMenuEntry = {
           component: activeTestResult.componentTagName,
@@ -123,49 +122,34 @@ export class CcVisualTestsReportMenu extends LitElement {
     }
   }
 
-  /**
-   * @param {VisualTestResult[]} testResults
-   * @returns {VisualTestResult[]}
-   */
-  _sortTestResults(testResults) {
-    return [...testResults].sort((a, b) => {
-      const componentCompare = a.componentTagName.localeCompare(b.componentTagName);
-      if (componentCompare !== 0) {
-        return componentCompare;
+  /** @param {CcVisualTestsReportMenuPropertyValues} changedProperties */
+  updated(changedProperties) {
+    if (changedProperties.has('activeTestResultId') && this.activeTestResultId != null) {
+      /**
+       * Make sure the active link is visible
+       * Useful in two cases:
+       * - when the active link set from outside (router) is not one of the first links that are immediately visible,
+       * - when using the prev / next links.
+       */
+      const activeLinkElement = this.shadowRoot.querySelector('.viewport-browser-list__item__link--active');
+      if (!isVisibleInContainer(activeLinkElement, this._componentListRef.value)) {
+        activeLinkElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-      // If componentTagNames are the same, sort by storyName
-      if (a.storyName === 'defaultStory' && b.storyName !== 'defaultStory') {
-        return -1;
-      }
-      if (a.storyName !== 'defaultStory' && b.storyName === 'defaultStory') {
-        return 1;
-      }
-      const storyCompare = a.storyName.localeCompare(b.storyName);
-      if (storyCompare !== 0) {
-        return storyCompare;
-      }
-      // If storyNames are the same, sort by viewportType
-      const browserNameCompare = a.browserName.localeCompare(b.browserName);
-      if (browserNameCompare !== 0) {
-        return browserNameCompare;
-      }
-      // If viewportTypes are the same, sort by browserName
-      return a.viewportType.localeCompare(b.viewportType);
-    });
+    }
   }
 
   _setPreviousAndNextTestResultIds() {
-    const activeTestResultIndex = this._sortedTestResultsIds.indexOf(this.activeTestResultId);
-    const nbOfTestResults = this._sortedTestResultsIds.length;
+    const activeTestResultIndex = this._testsResultsIds.indexOf(this.activeTestResultId);
+    const nbOfTestResults = this._testsResultsIds.length;
     const previousTestResultIndex = (activeTestResultIndex - 1 + nbOfTestResults) % nbOfTestResults;
     const nextTestResultIndex = (activeTestResultIndex + 1) % nbOfTestResults;
 
-    this._previousTestResultId = this._sortedTestResultsIds[previousTestResultIndex];
-    this._nextTestResultId = this._sortedTestResultsIds[nextTestResultIndex];
+    this._previousTestResultId = this._testsResultsIds[previousTestResultIndex];
+    this._nextTestResultId = this._testsResultsIds[nextTestResultIndex];
   }
 
   render() {
-    if (this.testResults.length === 0) {
+    if (this.testsResults.length === 0) {
       return '';
     }
 
@@ -184,7 +168,7 @@ export class CcVisualTestsReportMenu extends LitElement {
           </a>
         </li>
       </ul>
-      <ul class="component-list">
+      <ul class="component-list" ${ref(this._componentListRef)}>
         ${this._menuEntries.map(({ componentTagName, stories }) => {
           const isMenuItemOpen = this._activeMenuEntry.component === componentTagName;
           return html`
@@ -257,7 +241,8 @@ export class CcVisualTestsReportMenu extends LitElement {
     return [
       css`
         :host {
-          display: block;
+          display: grid;
+          grid-template-rows: auto 1fr;
         }
 
         cc-icon {
@@ -331,6 +316,9 @@ export class CcVisualTestsReportMenu extends LitElement {
           display: flex;
           flex-direction: column;
           gap: 0.5em;
+          overflow-x: hidden;
+          overflow-y: auto;
+          scrollbar-gutter: stable;
         }
 
         .component-list__item {

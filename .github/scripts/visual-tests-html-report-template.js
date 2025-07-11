@@ -17,7 +17,7 @@ export function visualTestsHtmlReport(report) {
         <link rel="stylesheet" href="https://components.clever-cloud.com/styles.css" />
         <script
           type="module"
-          src="https://preview-components.clever-cloud.com/load.js?version=visual-changes-new-components&amp;lang=en&amp;components=cc-block,cc-block-section,cc-visual-tests-menu,cc-visual-tests-entry"
+          src="https://preview-components.clever-cloud.com/load.js?version=tests-visual-changes&lang=en&components=cc-visual-tests-report"
         ></script>
       </head>
       <body>
