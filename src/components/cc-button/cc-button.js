@@ -355,7 +355,7 @@ export class CcButton extends LitElement {
           font-weight: var(--cc-button-font-weight, bold);
           min-height: 2em;
           overflow: hidden;
-          padding: 0 0.5em;
+          padding: 0 1em;
           /* used to absolutely position the <progress> */
           position: relative;
           text-transform: var(--cc-button-text-transform, uppercase);
