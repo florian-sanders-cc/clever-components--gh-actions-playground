@@ -161,9 +161,7 @@ This project provides a series of tasks you can run as [npm scripts](https://doc
 * Publish (create or update) a branch on the preview system.
 * It uses current branch name by default, but you can provide a CLI param to override the name.
 
-## `npm run start`
 
-* Start a static HTTP server to serve the [Storybook](https://storybook.js.org/) from `storybook-static`.
 
 ## `npm run storybook:build`
 
@@ -215,6 +213,16 @@ Check the CSS of our components with [Stylelint](https://stylelint.io/) and fix 
 * Run tests for a specific group with Web Test Runner in watch mode
 * Takes same group parameters as `test:group` command
 * Usage: `npm run test:watch:group <group-name>`
+
+## `npm run test:visual`
+
+* Run visual regression tests with [Web Test Runner](https://modern-web.dev/docs/test-runner/overview/),
+* This task is designed to be run in CI.
+
+## `npm run test:visual:update-expectation`
+
+* Update visual regression test expectations with [Web Test Runner](https://modern-web.dev/docs/test-runner/overview/),
+* This task is designed to be run in CI.
 
 ## `npm run typecheck`
 

@@ -28,12 +28,21 @@ const DATE_FORMATTER_SHORT = new DateFormatter('datetime-short', 'local');
  * @typedef {import('lit/directives/ref.js').Ref<HTMLElement & { tagName: 'MAIN' }>} HTMLMainElementRef
  */
 
+/**
+ * A component that displays a visual testing report.
+ *
+ * ## Details
+ *
+ * This component is designed to display a comprehensive report of visual regression tests.
+ * It features a navigation menu on the left to browse through different test results and a main content area on the right to display the selected test result entry along with its metadata.
+ *
+ * @cssdisplay grid
+ */
 export class CcVisualTestsReport extends LitElement {
   static get properties() {
     return {
       activeTestResultId: { type: String, attribute: 'active-test-result-id' },
       report: { type: Object },
-      _sortedTestsResults: { type: Array, state: true },
     };
   }
   constructor() {
@@ -299,8 +308,8 @@ export class CcVisualTestsReport extends LitElement {
         }
 
         .left {
-          background-color: var(--cc-color-bg-neutral);
-          border-right: solid 1px var(--cc-color-border-neutral-weak);
+          background-color: var(--cc-color-bg-neutral, #f5f5f5);
+          border-right: solid 1px var(--cc-color-border-neutral-weak, #e7e7e7);
           display: grid;
           grid-template-rows: auto auto 1fr;
           height: 100svh;
@@ -322,14 +331,14 @@ export class CcVisualTestsReport extends LitElement {
 
         .storybook-link {
           align-items: center;
-          border-radius: var(--cc-border-radius-default);
+          border-radius: var(--cc-border-radius-default, 0.25em);
           display: flex;
           text-decoration: none;
         }
 
         .storybook-link:focus-visible {
-          outline: var(--cc-focus-outline);
-          outline-offset: var(--cc-focus-outline-offset);
+          outline: var(--cc-focus-outline, #3569aa solid 2px);
+          outline-offset: var(--cc-focus-outline-offset, 2px);
         }
 
         .storybook-link cc-img {
@@ -371,7 +380,7 @@ export class CcVisualTestsReport extends LitElement {
 
         .metadata-list {
           --bdw: 2px;
-          --color: var(--cc-color-bg-primary);
+          --color: var(--cc-color-bg-primary, #3569aa);
           --padding: 0.5em;
 
           display: flex;
@@ -382,7 +391,7 @@ export class CcVisualTestsReport extends LitElement {
         .metadata-list__item {
           background-color: var(--color);
           border: var(--bdw) solid var(--color);
-          border-radius: var(--cc-border-radius-default);
+          border-radius: var(--cc-border-radius-default, 0.25em);
           display: flex;
           flex-wrap: wrap;
           font-size: 0.8em;
@@ -399,23 +408,23 @@ export class CcVisualTestsReport extends LitElement {
 
         .metadata-list__item__name {
           align-items: center;
-          color: var(--cc-color-text-inverted, #fff);
+          color: var(--cc-color-text-inverted, #ffffff);
           display: flex;
           gap: 0.5em;
         }
 
         .metadata-list__item__value {
           align-items: center;
-          background-color: var(--cc-color-bg-default, #fff);
-          border-radius: var(--cc-border-radius-small);
-          color: var(--cc-color-text-primary);
+          background-color: var(--cc-color-bg-default, #ffffff);
+          border-radius: var(--cc-border-radius-small, 0.15em);
+          color: var(--cc-color-text-primary, #3569aa);
           display: flex;
           flex-wrap: wrap;
           gap: 0.5em;
         }
 
         cc-datetime-relative {
-          border-inline-start: solid 2px var(--cc-color-bg-primary);
+          border-inline-start: solid 2px var(--cc-color-bg-primary, #3569aa);
           font-style: italic;
           padding-left: 0.5em;
         }

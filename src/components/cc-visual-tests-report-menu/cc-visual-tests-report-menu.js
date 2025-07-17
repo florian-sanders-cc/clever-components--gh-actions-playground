@@ -19,13 +19,23 @@ import '../cc-icon/cc-icon.js';
  * @typedef {import('lit/directives/ref.js').Ref<HTMLUListElement>} HTMLUListElementRef
  */
 
+/**
+ * A component that displays a menu for the visual tests report.
+ *
+ * ## Details
+ *
+ * It allows navigating through components, stories, and viewports.
+ * This component takes an array of visual test results and organizes them into a hierarchical, collapsible menu.
+ * It also provides "Previous" and "Next" buttons for quick navigation between test results.
+ *
+ * @cssdisplay grid
+ */
 export class CcVisualTestsReportMenu extends LitElement {
   static get properties() {
     return {
       activeTestResultId: { type: String, attribute: 'active-test-result-id' },
       testsResults: { type: Array, attribute: 'tests-results' },
       _activeMenuEntry: { type: Object, state: true },
-      _menuEntries: { type: Array, state: true },
     };
   }
 
@@ -268,9 +278,9 @@ export class CcVisualTestsReportMenu extends LitElement {
 
         .quick-nav a {
           align-items: center;
-          background-color: var(--cc-color-bg-primary);
-          border-radius: var(--cc-border-radius-default);
-          color: var(--cc-color-text-inverted);
+          background-color: var(--cc-color-bg-primary, #3569aa);
+          border-radius: var(--cc-border-radius-default, 0.25em);
+          color: var(--cc-color-text-inverted, #ffffff);
           display: flex;
           flex: 1 1 0;
           gap: 0.5em;
@@ -307,9 +317,9 @@ export class CcVisualTestsReportMenu extends LitElement {
         .viewport-browser-list__item__link:focus-visible,
         .btn:focus-visible,
         .quick-nav a:focus {
-          border-radius: var(--cc-border-radius-default);
-          outline: var(--cc-focus-outline);
-          outline-offset: var(--cc-focus-outline-offset);
+          border-radius: var(--cc-border-radius-default, 0.25em);
+          outline: var(--cc-focus-outline, #3569aa solid 2px);
+          outline-offset: var(--cc-focus-outline-offset, 2px);
         }
 
         .component-list {
@@ -330,7 +340,7 @@ export class CcVisualTestsReportMenu extends LitElement {
         }
 
         .story-list:not([hidden]) {
-          background-color: var(--cc-color-bg-neutral-alt);
+          background-color: var(--cc-color-bg-neutral-alt, #e7e7e7);
           display: flex;
           flex-direction: column;
           padding: 0.5em 1em;
@@ -342,7 +352,7 @@ export class CcVisualTestsReportMenu extends LitElement {
         }
 
         .story-list__item:not(:last-of-type) {
-          border-bottom: solid 1px var(--cc-color-border-neutral);
+          border-bottom: solid 1px var(--cc-color-border-neutral, #bfbfbf);
         }
 
         .viewport-browser-list {
@@ -351,7 +361,7 @@ export class CcVisualTestsReportMenu extends LitElement {
 
         .viewport-browser-list__item__link {
           align-items: center;
-          color: var(--cc-color-text-default);
+          color: var(--cc-color-text-default, #262626);
           display: flex;
           justify-content: space-between;
           margin-left: 1.5em;
@@ -365,9 +375,9 @@ export class CcVisualTestsReportMenu extends LitElement {
         }
 
         .viewport-browser-list__item__link--active {
-          background-color: var(--cc-color-bg-primary);
-          border-radius: var(--cc-border-radius-small);
-          color: var(--cc-color-text-inverted);
+          background-color: var(--cc-color-bg-primary, #3569aa);
+          border-radius: var(--cc-border-radius-small, 0.15em);
+          color: var(--cc-color-text-inverted, #ffffff);
         }
       `,
     ];

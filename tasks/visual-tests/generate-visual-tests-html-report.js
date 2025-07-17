@@ -71,16 +71,15 @@ const html = `
 
         // handle browser history API (backward / forward in history)
         window.addEventListener('popstate', (event) => {
-          let testResultId;
-          if (event.state && event.state.testResultId) {
-            testResultId = event.state.testResultId;
-            navigateTo(testResultId);
-          }
+          const testResultId = event.state?.testResultId;
+          navigateTo(testResultId);
         });
 
         function navigateTo(testResultId) {
           const testResult = report.results.find((result) => result.id === testResultId);
-          document.title = testResult.componentTagName + ' ' + testResult.storyName + ' ' + testResult.viewportType + ' ' + testResult.browserName + ' | PR ' + report.prNumber + ' | ' + 'Visual Tests Report'
+          if (testResult != null) {
+            document.title = testResult.componentTagName + ' ' + testResult.storyName + ' ' + testResult.viewportType + ' ' + testResult.browserName + ' | PR ' + report.prNumber + ' | ' + 'Visual Tests Report'
+          }
           ccVisualTestsReport.activeTestResultId = testResultId;
         }
       </script>

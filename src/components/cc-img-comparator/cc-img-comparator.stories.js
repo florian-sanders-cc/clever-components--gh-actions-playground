@@ -4,7 +4,7 @@ import './cc-img-comparator.js';
 
 export default {
   tags: ['autodocs'],
-  title: '🛠 Utility/<cc-img-comparator>',
+  title: '🧐 Visual tests/<cc-img-comparator>',
   component: 'cc-img-comparator',
 };
 

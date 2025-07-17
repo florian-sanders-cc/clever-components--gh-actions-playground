@@ -4,7 +4,7 @@ import './cc-visual-tests-report.js';
 
 export default {
   tags: ['autodocs'],
-  title: '🛠 Utility/<cc-visual-tests-report>',
+  title: '🧐 Visual tests/<cc-visual-tests-report>',
   component: 'cc-visual-tests-report',
 };
 

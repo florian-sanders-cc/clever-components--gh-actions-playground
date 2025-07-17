@@ -75,7 +75,7 @@ jobs:
       # - last-expectation-update-local: string - date as string representing the last update of the expectation screenshots (Local)
       - name: '[Run] Check for last expectation update'
         id: check-for-expectation-update
-        run: node ./.github/scripts/manage-visual-tests-data.js check-for-expectation-update
+        run: node ./tasks/visual-tests/manage-visual-tests-data.js check-for-expectation-update
         env:
           VISUAL_TESTS_CELLAR_KEY_ID: ${{ secrets.VISUAL_TESTS_CELLAR_KEY_ID }}
           VISUAL_TESTS_CELLAR_SECRET_KEY: ${{ secrets.VISUAL_TESTS_CELLAR_SECRET_KEY }}
@@ -204,20 +204,20 @@ jobs:
       # - impacted-components-md: Array<string> - formatted list of impacted components to be inserted as Markdown
       - name: '[Run] Merge results & generate final JSON report'
         id: merge-results-and-generate-report
-        run: node ./.github/scripts/generate-visual-tests-json-report.js
+        run: node ./tasks/visual-tests/generate-visual-tests-json-report.js
         env:
           LAST_EXPECTATION_UPDATE: ${{ needs.update-expectation.outputs.last-expectation-update-utc || needs.check-for-expectation-update.outputs.last-expectation-update-utc }}
           LAST_ACTUAL_UPDATE: ${{ needs.run-visual-tests.outputs.last-actual-update-utc }}
 
       - name: '[Run] Generate HTML report'
         if: ${{ steps.merge-results-and-generate-report.outputs.nb-of-impacted-components }} > 0
-        run: node ./.github/scripts/generate-visual-tests-html-report.js
+        run: node ./tasks/visual-tests/generate-visual-tests-html-report.js
 
       # Expected outputs:
       # - reports_url: url where reports have been uploaded to
       - name: '[Run] Upload test reports to Cellar'
         id: 'upload-test-reports'
-        run: node ./.github/scripts/manage-visual-tests-data.js upload
+        run: node ./tasks/visual-tests/manage-visual-tests-data.js upload
         env:
           VISUAL_TESTS_CELLAR_KEY_ID: ${{ secrets.VISUAL_TESTS_CELLAR_KEY_ID }}
           VISUAL_TESTS_CELLAR_SECRET_KEY: ${{ secrets.VISUAL_TESTS_CELLAR_SECRET_KEY }}
@@ -272,7 +272,7 @@ jobs:
 
       - name: '[Run] Remove report data for current branch'
         id: delete-report-and-assets
-        run: node ./.github/scripts/manage-visual-tests-data.js delete
+        run: node ./tasks/visual-tests/manage-visual-tests-data.js delete
         env:
           VISUAL_TESTS_CELLAR_KEY_ID: ${{ secrets.VISUAL_TESTS_CELLAR_KEY_ID }}
           VISUAL_TESTS_CELLAR_SECRET_KEY: ${{ secrets.VISUAL_TESTS_CELLAR_SECRET_KEY }}
@@ -285,7 +285,7 @@ jobs:
           MESSAGE: |
             ## :broom: Visual Changes Report deleted
 
-            The report and its associated data have been deleted following the closing of this PR.
+            The report and its associated data have been deleted because this PR has been closed.
 
             _This comment was generated automatically by the Visual Changes workflow._
 

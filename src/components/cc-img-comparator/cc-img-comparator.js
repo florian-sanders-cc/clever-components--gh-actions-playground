@@ -7,6 +7,17 @@ import '../cc-icon/cc-icon.js';
  * @typedef {import('../../lib/events.types.js').EventWithTarget<HTMLInputElement & { type: 'range' }>} HTMLInputRangeEvent
  */
 
+/**
+ * A component to compare two images with a slider.
+ *
+ * ## Details
+ *
+ * * This component renders two images on top of each other.
+ * * A slider can be moved horizontally to reveal one image or the other.
+ * * This is useful to compare two versions of an image, for instance a "before" and an "after".
+ *
+ * @cssdisplay block
+ */
 export class CcImgComparator extends LitElement {
   static get properties() {
     return {
@@ -76,7 +87,7 @@ export class CcImgComparator extends LitElement {
 
         .img-wrapper {
           align-items: center;
-          border-radius: var(--cc-border-radius-default);
+          border-radius: var(--cc-border-radius-default, 0.25em);
           display: grid;
           grid-template-areas: 'img';
           height: 100%;
@@ -128,7 +139,7 @@ export class CcImgComparator extends LitElement {
 
         cc-icon {
           background-color: #fff;
-          border: solid 1px var(--cc-color-border-neutral);
+          border: solid 1px var(--cc-color-border-neutral, #bfbfbf);
           border-radius: 50%;
           display: flex;
           padding: 0.5em;
@@ -139,7 +150,7 @@ export class CcImgComparator extends LitElement {
         }
 
         .separator {
-          background-color: var(--cc-color-border-neutral);
+          background-color: var(--cc-color-border-neutral, #bfbfbf);
           border: solid 2px #fff;
           box-sizing: border-box;
           height: 100%;
@@ -150,8 +161,8 @@ export class CcImgComparator extends LitElement {
         }
 
         input:focus-visible + cc-icon {
-          outline: var(--cc-focus-outline);
-          outline-offset: var(--cc-focus-outline-offset);
+          outline: var(--cc-focus-outline, #3569aa solid 2px);
+          outline-offset: var(--cc-focus-outline-offset, 2px);
         }
 
         input:hover + cc-icon {

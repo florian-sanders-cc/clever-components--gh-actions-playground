@@ -46,6 +46,19 @@ const VIEWPORT_ICONS = /** @type {const} */ ({
  * @typedef {import('../cc-toggle/cc-toggle.types.js').Choice} Choice
  */
 
+/**
+ * A component that displays a single visual test result.
+ *
+ * ## Details
+ *
+ * It shows:
+ * - a header with the component name, story name, viewport and browser,
+ * - a viewer that can be switched between a three-way diff (expectation, actual, diff) and an image comparator.
+ *
+ * When `testResult` is null, the component is empty.
+ *
+ * @cssdisplay grid
+ */
 export class CcVisualTestsReportEntry extends LitElement {
   static get properties() {
     return {
@@ -156,7 +169,7 @@ export class CcVisualTestsReportEntry extends LitElement {
 
         .main-heading {
           align-items: center;
-          color: var(--cc-color-text-primary-strongest);
+          color: var(--cc-color-text-primary-strongest, #012a51);
           display: flex;
           flex-wrap: wrap;
           font-size: 1.2em;
@@ -174,7 +187,7 @@ export class CcVisualTestsReportEntry extends LitElement {
         }
 
         .heading {
-          background-color: var(--cc-color-bg-neutral);
+          background-color: var(--cc-color-bg-neutral, #f5f5f5);
           font-weight: bold;
           padding: 1em;
         }
@@ -192,8 +205,8 @@ export class CcVisualTestsReportEntry extends LitElement {
         }
 
         .viewbox {
-          border: solid 1px var(--cc-color-border-neutral);
-          border-radius: var(--cc-border-radius-default);
+          border: solid 1px var(--cc-color-border-neutral, #bfbfbf);
+          border-radius: var(--cc-border-radius-default, 0.25em);
           box-sizing: border-box;
           overflow: hidden;
         }
@@ -214,14 +227,14 @@ export class CcVisualTestsReportEntry extends LitElement {
         }
 
         .diff {
-          border: solid 1px var(--cc-color-border-neutral);
-          border-radius: var(--cc-border-radius-default);
+          border: solid 1px var(--cc-color-border-neutral, #bfbfbf);
+          border-radius: var(--cc-border-radius-default, 0.25em);
           display: block;
         }
 
         cc-img-comparator {
-          border: solid 1px var(--cc-color-border-neutral);
-          border-radius: var(--cc-border-radius-default);
+          border: solid 1px var(--cc-color-border-neutral, #bfbfbf);
+          border-radius: var(--cc-border-radius-default, 0.25em);
           margin-inline: auto;
           max-width: max-content;
           overflow: hidden;
